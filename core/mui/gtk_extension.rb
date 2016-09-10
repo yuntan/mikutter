@@ -186,7 +186,7 @@ class Gtk::Lock
   end
 end
 
-class Gtk::Widget
+class Gtk::Widget < Gtk::Style
   # ウィジェットを上寄せで配置する
   def top
     Gtk::Alignment.new(0.0, 0, 0, 0).add(self)
@@ -209,14 +209,14 @@ class Gtk::Widget
 
   # ウィジェットにツールチップ _text_ をつける
   def tooltip(text)
-    Gtk::Tooltip.instance.set_text(text)
+    Gtk::Tooltips.instance.set_tip(self, text, '')
     self end
 
 end
 
-class Gtk::Tooltip
+class Gtk::Tooltips
   def self.instance
-    @tooltip_class ||= Gtk::Tooltip.new
+    @tooltip_class ||= Gtk::Tooltips.new
   end
 end
 
