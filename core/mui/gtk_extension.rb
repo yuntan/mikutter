@@ -85,7 +85,7 @@ class GLib::Instantiatable
 
 end
 
-class Gtk::Object
+class Gtk::Style
   def self.main_quit
     Gtk.main_quit end end
 
@@ -186,7 +186,7 @@ class Gtk::Lock
   end
 end
 
-class Gtk::Widget < Gtk::Object
+class Gtk::Widget < Gtk::Style
   # ウィジェットを上寄せで配置する
   def top
     Gtk::Alignment.new(0.0, 0, 0, 0).add(self)
