@@ -2,7 +2,7 @@
 
 miquire :mui, 'miracle_painter'
 
-require 'gtk2'
+require 'gtk3'
 
 module Gtk
   class CellRendererMessage < CellRendererPixbuf

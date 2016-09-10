@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 miquire :core, 'userconfig'
 
-require 'gtk2'
+require 'gtk3'
 require 'monitor'
 require_if_exist 'Win32API'
 

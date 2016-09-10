@@ -3,7 +3,7 @@ miquire :mui, 'extension', 'contextmenu'
 miquire :core, 'plugin'
 miquire :miku, 'miku'
 
-require 'gtk2'
+require 'gtk3'
 require 'uri'
 
 class Gtk::IntelligentTextview < Gtk::TextView

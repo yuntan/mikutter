@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require 'gtk2'
+require 'gtk3'
 
 module Gtk::InnerTLDarkMatterPurification
   if Gtk::BINDING_VERSION < [1, 2, 1]

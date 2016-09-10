@@ -4,7 +4,7 @@
 つぶやき入力ボックス。
 =end
 
-require 'gtk2'
+require 'gtk3'
 require 'thread'
 miquire :mui, 'miracle_painter'
 miquire :mui, 'intelligent_textview'

@@ -7,7 +7,7 @@ miquire :mui, 'crud'
 miquire :mui, 'keyconfig'
 miquire :mui, 'selectbox'
 
-require 'gtk2'
+require 'gtk3'
 
 module Mtk
   def self.adjustment(name, config, min, max)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-require 'gtk2'
+require 'gtk3'
 miquire :mui, 'extension', 'inneruserlist'
 
 require 'set'

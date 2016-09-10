@@ -2,7 +2,7 @@
 
 miquire :mui, 'timeline', 'tree_view_pretty_scroll', 'dark_matter_prification'
 miquire :lib, 'uithreadonly'
-require 'gtk2'
+require 'gtk3'
 
 class Gtk::TimeLine::InnerTL < Gtk::CRUD
 

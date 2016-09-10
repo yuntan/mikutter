@@ -2,7 +2,7 @@
 miquire :lib, 'weakstorage'
 miquire :lib, 'uithreadonly'
 
-require 'gtk2'
+require 'gtk3'
 
 =begin rdoc
   TimeLineオブジェクト用のメソッド集

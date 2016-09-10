@@ -5,7 +5,7 @@ require_relative '../utils'
 miquire :core, 'environment', 'serialthread', 'skin'
 miquire :mui, 'web_image_loader'
 
-require 'gtk2'
+require 'gtk3'
 require 'observer'
 
 # Web上の画像をレンダリングできる。

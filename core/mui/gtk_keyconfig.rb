@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 miquire :mui, 'extension'
 
-require 'gtk2'
+require 'gtk3'
 
 class Gtk::KeyConfig < Gtk::Button
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require 'gtk2'
+require 'gtk3'
 require 'cairo'
 require_relative 'window'
 require_relative 'model/photo'
