@@ -1,13 +1,11 @@
 ---
-slug: :gtk3
+slug: :gtk
 depends:
   mikutter: '0.2'
   plugin:
   - gui
   - uitranslator
 version: '1.0'
-author:
-  - toshi_a
-  - katsyoshi
-name: Gtk3
-description: Gtk3を使ってウィンドウを描画する
+author: toshi_a
+name: Gtk2
+description: Gtk2を使ってウィンドウを描画する
