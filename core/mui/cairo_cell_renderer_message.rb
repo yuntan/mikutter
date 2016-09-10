@@ -3,7 +3,6 @@
 miquire :mui, 'miracle_painter'
 
 require 'gtk3'
-require 'byebug'
 
 module Gtk
   class CellRendererMessage < CellRendererPixbuf
