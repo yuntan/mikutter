@@ -186,7 +186,7 @@ class Gtk::Lock
   end
 end
 
-class Gtk::Widget < Gtk::Style
+class Gtk::Widget
   # ウィジェットを上寄せで配置する
   def top
     Gtk::Alignment.new(0.0, 0, 0, 0).add(self)

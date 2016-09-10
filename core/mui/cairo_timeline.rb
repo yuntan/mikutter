@@ -208,14 +208,4 @@ class Gtk::TimeLine
       Gtk::TimeLine.timelines.each{ |tl|
         tl.remove_if_exists_all(messages) if not(tl.destroyed?) } }
   }
-
-  Gtk::RC.parse_string <<EOS
-style "timelinestyle"
-{
-  GtkTreeView::vertical-separator = 0
-  GtkTreeView::horizontal-separator = 0
-}
-widget "*.timeline" style "timelinestyle"
-EOS
-
 end
