@@ -20,7 +20,7 @@ require_relative 'mainloop'
 require_relative 'konami_watcher'
 require_relative 'dialog_window'
 
-Plugin.create :gtk do
+Plugin.create :gtk3 do
   @slug_dictionary = Plugin::Gtk::SlugDictionary.new # widget_type => {slug => Gtk}
   @tabs_promise = {}                     # slug => Deferred
 

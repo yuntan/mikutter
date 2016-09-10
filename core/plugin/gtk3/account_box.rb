@@ -6,11 +6,11 @@ class Gtk::AccountBox < Gtk::EventBox
   UserConfig[:gtk_accountbox_geometry] ||= 32
 
   def initialize
-    Plugin[:gtk].on_primary_service_changed(&method(:change_user))
+    Plugin[:gtk3].on_primary_service_changed(&method(:change_user))
     super
-    Plugin[:gtk].on_service_registered do |service|
+    Plugin[:gtk3].on_service_registered do |service|
       refresh end
-    Plugin[:gtk].on_service_destroyed do |service|
+    Plugin[:gtk3].on_service_destroyed do |service|
       refresh end
     ssc(:button_press_event) do |this,event|
       open_menu event if 3 >= event.button

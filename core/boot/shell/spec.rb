@@ -37,7 +37,7 @@ class Depend < Ripper::Filter
       @last_const = tok end
     case @last_const
     when /\AG[td]k\Z/             # GtkクラスとかGdkクラス使ってたらgtkプラグインに依存してるだろう
-      depend :gtk
+      depend :gtk3
     when /\APlugin::(\w+)/       # Plugin::なんとか は、プラグインスラッグのキャメルケース名なので、使ってたら依存してる
       depend $1.gsub(/([a-z])([A-Z])/, '\1_\2').downcase.to_sym end end
 
