@@ -114,7 +114,8 @@ module Gtk
 
     def widget_send
       return @send if defined?(@send)
-      @send = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('post.png'), 16, 16))
+      @send = Gtk::Button.new
+      @send.add(Gtk::WebIcon.new(Skin.get('post.png'), 16, 16))
       @send.sensitive = postable?
       @send.signal_connect('clicked'){|button|
         post_it
@@ -123,7 +124,8 @@ module Gtk
 
     def widget_tool
       return @tool if defined?(@tool)
-      @tool = Gtk::Button.new.add(Gtk::WebIcon.new(Skin.get_path('close.png'), 16, 16))
+      @tool = Gtk::Button.new
+      @tool.add(Gtk::WebIcon.new(Skin.get('close.png'), 16, 16))
       @tool.signal_connect_after('focus_out_event', &method(:focus_out_event))
       @tool.ssc('event'){
         @tool.sensitive = destructible? || posting?
@@ -191,7 +193,8 @@ module Gtk
     def generate_box
       @reply_widgets = []
       result = Gtk::HBox.new(false, 0).closeup(widget_tool).pack_start(widget_post).closeup(widget_remain).closeup(widget_send)
-      w_replies = Gtk::VBox.new.add(result)
+      w_replies = Gtk::VBox.new
+      w_replies.add(result)
       @to.select{|m|m.respond_to?(:description)}.each{ |message|
         w_reply = Gtk::HBox.new
         itv = Gtk::IntelligentTextview.new(message.description, 'font' => :mumble_basic_font)

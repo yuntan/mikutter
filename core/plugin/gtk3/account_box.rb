@@ -22,8 +22,9 @@ class Gtk::AccountBox < Gtk::EventBox
   def refresh
     if 1 < Service.to_a.size
       if not @face
-        @face = Gtk::Image.new(Skin['loading.png'].pixbuf(width: UserConfig[:gtk_accountbox_geometry], height: UserConfig[:gtk_accountbox_geometry]))
-        self.add(@face).show_all end
+        @face = Gtk::Image.new(Gdk::WebImageLoader.loading_pixbuf(UserConfig[:gtk_accountbox_geometry], UserConfig[:gtk_accountbox_geometry]))
+        self.add(@face)
+        self.show_all end
     else
       if @face
         self.remove(@face)
@@ -35,8 +36,7 @@ class Gtk::AccountBox < Gtk::EventBox
     refresh
     if @face
       user = service.user_obj
-      @face.pixbuf = user.icon.load_pixbuf(width: UserConfig[:gtk_accountbox_geometry],
-                                           height: UserConfig[:gtk_accountbox_geometry]){ |pixbuf|
+      @face.pixbuf = Gdk::WebImageLoader.pixbuf(user[:profile_image_url], UserConfig[:gtk_accountbox_geometry], UserConfig[:gtk_accountbox_geometry]){ |pixbuf|
         if user == service.user_obj
           @face.pixbuf = pixbuf end } end end
 
@@ -48,7 +48,7 @@ class Gtk::AccountBox < Gtk::EventBox
     @menu ||= Gtk::Menu.new.tap do |menu|
       Service.each do |service|
         item = Gtk::ImageMenuItem.new(service.user, false)
-        item.set_image Gtk::WebIcon.new(service.user_obj.icon, UserConfig[:gtk_accountbox_geometry], UserConfig[:gtk_accountbox_geometry])
+        item.set_image Gtk::WebIcon.new(service.user_obj[:profile_image_url], UserConfig[:gtk_accountbox_geometry], UserConfig[:gtk_accountbox_geometry])
         item.ssc(:activate) { |w|
           Service.set_primary(service)
           false }
