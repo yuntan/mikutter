@@ -83,7 +83,7 @@ Plugin.create :gtk3 do
   # ペインはGtk::NoteBook
   on_pane_created do |i_pane|
     pane = create_pane(i_pane)
-    pane.set_tab_border(0).set_group_id(0).set_scrollable(true)
+    pane.set_group_name('0').set_scrollable(true)#set_tab_border(0).set_group_id(0).set_scrollable(true)
     pane.set_tab_pos(TABPOS[UserConfig[:tab_position]])
     tab_position_listener = on_userconfig_modify do |key, val|
       next if key != :tab_position
@@ -103,14 +103,7 @@ Plugin.create :gtk3 do
     pane.ssc(:switch_page){ |this, page, pagenum|
       if pagenum == pane.page
         i_pane.set_active_child(pane.get_nth_page(pagenum).i_tab, true) end }
-    pane.signal_connect(:page_added){ |this, tabcontainer, index|
-      type_strict tabcontainer => ::Gtk::TabContainer
-      Plugin.call(:rewind_window_order, i_pane.parent) if i_pane.parent
-      i_tab = tabcontainer.i_tab
-      next false if i_tab.parent == i_pane
-      Plugin.call(:after_gui_tab_reparent, i_tab, i_tab.parent, i_pane)
-      i_pane.add_child(i_tab, index)
-      false }
+
     # 子が無くなった時 : このpaneを削除
     pane.signal_connect(:page_removed){
       if not(pane.destroyed?) and pane.children.empty? and pane.parent
@@ -178,9 +171,6 @@ Plugin.create :gtk3 do
   on_timeline_created do |i_timeline|
     gtk_timeline = ::Gtk::TimeLine.new(i_timeline)
     @slug_dictionary.add(i_timeline, gtk_timeline)
-    gtk_timeline.tl.ssc(key_press_event: timeline_key_press_event(i_timeline),
-                        focus_in_event:  timeline_focus_in_event(i_timeline),
-                        destroy:         timeline_destroy_event(i_timeline))
     gtk_timeline.show_all
   end
 
@@ -259,7 +249,7 @@ Plugin.create :gtk3 do
 
   on_gui_timeline_add_messages do |i_timeline, messages|
     gtk_timeline = widgetof(i_timeline)
-    gtk_timeline.add(messages) if gtk_timeline and not gtk_timeline.destroyed? end
+  end
 
   on_gui_postbox_join_widget do |i_postbox|
     type_strict i_postbox => Plugin::GUI::Postbox
@@ -293,8 +283,7 @@ Plugin.create :gtk3 do
 
   on_tab_toolbar_rewind do |i_tab_toolbar|
     tab_toolbar = widgetof(i_tab_toolbar)
-    if tab_toolbar
-      tab_toolbar.set_button end end
+  end
 
   on_gui_contextmenu do |event, contextmenu|
     widget = widgetof(event.widget)
