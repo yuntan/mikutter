@@ -14,7 +14,7 @@ UserConfig[:timeline_max] ||= 200
 =begin rdoc
   タイムラインのGtkウィジェット。
 =end
-class Gtk::TimeLine < Gtk::VBox
+class Gtk::TimeLine < Gtk::Box
 
   include Gtk::TimeLineUtils
   include Gtk::TimelineDarkMatterPurification
