@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'optparse'
 require 'net/http'
 require 'uri'
 require 'json'
@@ -25,6 +26,13 @@ def get_file_hash(gemname, version)
   result.select { |h| h['number'] == version && h['platform'] == 'ruby' }.first['sha']
 end
 
+params = { source: nil, out: 'rubygems.json' }
+OptionParser.new do |opt|
+  opt.on('-s', '--source=SOURCE') { |v| v }
+  opt.on('-o', '--out=OUTPUT') { |v| v }
+  opt.parse! ARGV, into: params
+end
+
 bundle_command = 'bundle install --local'
 sources = Dir.glob('*.gem', base: 'vendor/cache').map do |f|
   {
@@ -34,6 +42,7 @@ sources = Dir.glob('*.gem', base: 'vendor/cache').map do |f|
     dest: 'vendor/cache'
   }
 end
+sources = [params[:source]] + sources unless params[:source].nil?
 main_module = {
   name: 'rubygems',
   buildsystem: 'simple',
@@ -41,4 +50,4 @@ main_module = {
   sources: sources
 }
 
-File.write 'rubygems.json', JSON.pretty_generate(main_module)
+File.write params[:out], JSON.pretty_generate(main_module)

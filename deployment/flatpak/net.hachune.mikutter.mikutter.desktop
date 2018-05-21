@@ -1,9 +1,9 @@
 [Desktop Entry]
 Name=mikutter
-Comment=Twitter Client
+Comment=Simple, powerful and moeful twitter client
 Comment[ja]=至高のTwitterクライアント
 Exec=mikutter
-Icon=mikutter
+Icon=net.hachune.mikutter.mikutter
 Type=Application
 Terminal=false
 Categories=Network;
