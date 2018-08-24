@@ -209,15 +209,9 @@ class Gtk::Widget
 
   # ウィジェットにツールチップ _text_ をつける
   def tooltip(text)
-    Gtk::Tooltip.instance.set_text(text)
+    self.tooltip_text = text
     self end
 
-end
-
-class Gtk::Tooltip
-  def self.instance
-    @tooltip_class ||= Gtk::Tooltip.new
-  end
 end
 
 class Gtk::Container < Gtk::Widget
