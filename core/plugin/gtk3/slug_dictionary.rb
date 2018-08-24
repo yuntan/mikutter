@@ -17,7 +17,7 @@ module Plugin::Gtk
       end
     end
 
-    register_widget Plugin::GUI::Window,         ::Gtk::MikutterWindow
+    register_widget Plugin::GUI::Window,         ::Gtk::Window
     register_widget Plugin::GUI::Pane,           ::Gtk::Notebook
     register_widget Plugin::GUI::Tab,            ::Gtk::EventBox
     register_widget Plugin::GUI::TabToolbar,     ::Gtk::TabToolbar

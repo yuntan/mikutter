@@ -29,7 +29,7 @@ Plugin.create :gtk3 do
   # ウィンドウ作成。
   # PostBoxとか複数のペインを持つための処理が入るので、Gtk::MikutterWindowクラスを新設してそれを使う
   on_window_created do |i_window|
-    window = ::Gtk::MikutterWindow.new(i_window, self)
+    window = new_mikutter_window i_window, self
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
     window.set_size_request(240, 240)
@@ -221,9 +221,13 @@ Plugin.create :gtk3 do
     if pane.parent
       if pane.parent != window.panes
         pane.parent.remove(pane)
-        window.panes.pack_end(pane, false).show_all end
+        # FIXME: gtk3, Gridに合わせて書き換える
+        # window.panes.pack_end(pane, false).show_all end
+        window.panes.add(pane).show_all end
     else
-      window.panes.pack_end(pane, false).show_all
+      # FIXME: gtk3, Gridに合わせて書き換える
+      # window.panes.pack_end(pane, false).show_all
+      window.panes.add(pane).show_all
     end
   end
 
