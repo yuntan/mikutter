@@ -214,7 +214,7 @@ class Gtk::Widget
 
 end
 
-class Gtk::Container < Gtk::Widget
+class Gtk::Box < Gtk::Container
   # _widget_ を詰めて配置する。closeupで配置されたウィジェットは無理に親の幅に合わせられることがない。
   # pack_start(_widget_, false)と等価。
   def closeup(widget)
