@@ -33,9 +33,10 @@ Plugin.create :gtk3 do
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
     window.set_size_request(240, 240)
-    geometry = get_window_geometry(i_window.slug)
-    window.set_default_size(*geometry[:size])
-    window.move(*geometry[:position])
+    # FIXME: gtk3, find alternative method
+    # geometry = get_window_geometry(i_window.slug)
+    # window.set_default_size(*geometry[:size])
+    # window.move(*geometry[:position])
     window.ssc(:event){ |window, event|
       if event.is_a? Gdk::EventConfigure
         geometry = (UserConfig[:windows_geometry] || {}).melt
@@ -294,8 +295,7 @@ Plugin.create :gtk3 do
 
   on_tab_toolbar_rewind do |i_tab_toolbar|
     tab_toolbar = widgetof(i_tab_toolbar)
-    if tab_toolbar
-      tab_toolbar.set_button end end
+    tab_toolbar&.set_button end
 
   on_gui_contextmenu do |event, contextmenu|
     widget = widgetof(event.widget)
