@@ -2,17 +2,18 @@
 # なーにがkonami_watcherじゃ
 
 module Gtk
-  KONAMI_SEQUENCE = [Gdk::Keyval::GDK_Up,
-                     Gdk::Keyval::GDK_Up,
-                     Gdk::Keyval::GDK_Down,
-                     Gdk::Keyval::GDK_Down,
-                     Gdk::Keyval::GDK_Left,
-                     Gdk::Keyval::GDK_Right,
-                     Gdk::Keyval::GDK_Left,
-                     Gdk::Keyval::GDK_Right,
-                     Gdk::Keyval::GDK_b,
-                     Gdk::Keyval::GDK_a].freeze
+  KONAMI_SEQUENCE = [Gdk::Keyval::KEY_Up,
+                     Gdk::Keyval::KEY_Up,
+                     Gdk::Keyval::KEY_Down,
+                     Gdk::Keyval::KEY_Down,
+                     Gdk::Keyval::KEY_Left,
+                     Gdk::Keyval::KEY_Right,
+                     Gdk::Keyval::KEY_Left,
+                     Gdk::Keyval::KEY_Right,
+                     Gdk::Keyval::KEY_b,
+                     Gdk::Keyval::KEY_a].freeze
   remain = KONAMI_SEQUENCE
+  # TODO: gtk3 key_snooper_installの代替方法を考える
   # Gtk.key_snooper_install do |grab_widget, event|
   #   if Gdk::Event::KEY_PRESS == event.event_type
   #     if remain.first == event.keyval

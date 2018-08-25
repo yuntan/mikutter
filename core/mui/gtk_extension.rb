@@ -125,11 +125,11 @@ module Gtk
     return NO_ACTION if key.empty? or key[0] == 0 or not key.all?
 
     r = ""
-    r << PRESS_WITH_CONTROL if (key[1] & Gdk::Window::CONTROL_MASK) != 0
-    r << PRESS_WITH_SHIFT if (key[1] & Gdk::Window::SHIFT_MASK) != 0
-    r << PRESS_WITH_ALT if (key[1] & Gdk::Window::MOD1_MASK) != 0
-    r << PRESS_WITH_SUPER if (key[1] & Gdk::Window::SUPER_MASK) != 0
-    r << PRESS_WITH_HYPER if (key[1] & Gdk::Window::HYPER_MASK) != 0
+    r << PRESS_WITH_CONTROL if (key[1] & :control_mask) != 0
+    r << PRESS_WITH_SHIFT if (key[1] & :shift_mask) != 0
+    r << PRESS_WITH_ALT if (key[1] & :mod1_mask) != 0
+    r << PRESS_WITH_SUPER if (key[1] & :super_mask) != 0
+    r << PRESS_WITH_HYPER if (key[1] & :hyper_mask) != 0
     return r + Gdk::Keyval.to_name(key[0]) end
 
   def self.buttonname(key)
