@@ -95,7 +95,7 @@ module Gtk
       return @remain if defined?(@remain)
       @remain = Gtk::Label.new('---')
       tag = Plugin[:gtk].handler_tag
-      @remain.ssc_atonce(:expose_event) {
+      @remain.ssc_atonce(:draw) {
         Plugin[:gtk].on_world_change_current(tags: tag) { |world|
           update_remain_charcount
         }
