@@ -83,7 +83,9 @@ Plugin.create :gtk3 do
   # ペインはGtk::NoteBook
   on_pane_created do |i_pane|
     pane = create_pane(i_pane)
-    pane.set_group_name('0').set_scrollable(true)#set_tab_border(0).set_group_id(0).set_scrollable(true)
+    pane.group_name = '0'
+    pane.scrollable = true
+    pane.show_border = false
     pane.set_tab_pos(TABPOS[UserConfig[:tab_position]])
     tab_position_listener = on_userconfig_modify do |key, val|
       next if key != :tab_position
