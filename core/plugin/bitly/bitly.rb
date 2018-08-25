@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 require 'cgi'
 
+miquire :lib, 'weakstorage'
+
 module Plugin::Bitly
   USER = 'mikutter'.freeze
   APIKEY = 'R_70170ccac1099f3ae1818af3fa7bb311'.freeze
