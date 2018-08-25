@@ -53,7 +53,8 @@ class Gtk::IntelligentTextview < Gtk::TextView
     elsif @style_generator
       @style_generator
     else
-      parent.style.bg(Gtk::STATE_NORMAL)
+      # FIXME: gtk3, find alternative method
+      # parent.style.bg(Gtk::STATE_NORMAL)
     end
   end
   alias :get_background :style_generator
@@ -61,15 +62,17 @@ class Gtk::IntelligentTextview < Gtk::TextView
 
   # TODO プライベートにする
   def set_cursor(textview, cursor)
-    textview.get_window(Gtk::TextView::WINDOW_TEXT).set_cursor(Gdk::Cursor.new(cursor))
+    # FIXME: gtk3, find alternative method
+    # textview.get_window(Gtk::TextView::WINDOW_TEXT).set_cursor(Gdk::Cursor.new(cursor))
   end
 
   def bg_modifier(color = style_generator)
-    if color.is_a? Gtk::Style
-      self.style = color
-    elsif get_window(Gtk::TextView::WINDOW_TEXT).respond_to?(:background=)
-      get_window(Gtk::TextView::WINDOW_TEXT).background = color end
-    queue_draw
+    # FIXME: gtk3, find alternative method
+    # if color.is_a? Gtk::Style
+    #   self.style = color
+    # elsif get_window(Gtk::TextView::WINDOW_TEXT).respond_to?(:background=)
+    #   get_window(Gtk::TextView::WINDOW_TEXT).background = color end
+    # queue_draw
     false end
 
   # 新しいテキスト _msg_ に内容を差し替える。
