@@ -3,10 +3,6 @@
 module Mainloop
   extend Mainloop
 
-  # メインループ実行前に呼ばれる
-  def before_mainloop
-  end
-
   # メインループ本体
   def mainloop
     loop{
