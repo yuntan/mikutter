@@ -94,15 +94,15 @@ module Gtk
     def widget_remain
       return @remain if defined?(@remain)
       @remain = Gtk::Label.new('---')
-      tag = Plugin[:gtk].handler_tag
+      tag = Plugin[:gtk3].handler_tag
       @remain.ssc_atonce(:draw) {
-        Plugin[:gtk].on_world_change_current(tags: tag) { |world|
+        Plugin[:gtk3].on_world_change_current(tags: tag) { |world|
           update_remain_charcount
         }
         false
       }
       @remain.ssc(:destroy) {
-        Plugin[:gtk].detach(tag)
+        Plugin[:gtk3].detach(tag)
       }
       Delayer.new{
         update_remain_charcount
@@ -165,7 +165,7 @@ module Gtk
     def post_it
       if postable?
         return unless before_post
-        @posting = Plugin[:gtk].compose(
+        @posting = Plugin[:gtk3].compose(
           current_world,
           to_display_only? ? nil : @to.first,
           **compose_options
@@ -211,7 +211,7 @@ module Gtk
       Gtk::TextView.new end
 
     def postable?
-      not(widget_post.buffer.text.empty?) and (/[^\p{blank}]/ === widget_post.buffer.text) and Plugin[:gtk].compose?(current_world, to_display_only? ? nil : @to.first, visibility: @visibility)
+      not(widget_post.buffer.text.empty?) and (/[^\p{blank}]/ === widget_post.buffer.text) and Plugin[:gtk3].compose?(current_world, to_display_only? ? nil : @to.first, visibility: @visibility)
     end
 
     # 新しいPostBoxを作り、そちらにフォーカスを回す
@@ -326,7 +326,7 @@ module Gtk
     def remain_charcount
       if not widget_post.destroyed?
         current_world, = Plugin.filtering(:world_current, nil)
-        Plugin[:gtk].spell(:remain_charcount, current_world, **compose_options)
+        Plugin[:gtk3].spell(:remain_charcount, current_world, **compose_options)
       end
     end
 

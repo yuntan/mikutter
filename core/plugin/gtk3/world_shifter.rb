@@ -37,7 +37,7 @@ class Gtk::WorldShifter < Gtk::EventBox
         menu.append item
       end
       menu.append Gtk::SeparatorMenuItem.new
-      item = Gtk::ImageMenuItem.new(Plugin[:gtk]._('Worldを追加'), false)
+      item = Gtk::ImageMenuItem.new(Plugin[:gtk3]._('Worldを追加'), false)
       item.set_image Gtk::WebIcon.new(Skin['add.png'], UserConfig[:gtk_accountbox_geometry], UserConfig[:gtk_accountbox_geometry])
       item.ssc(:activate) { |w|
         Plugin.call(:request_world_add)
@@ -54,20 +54,20 @@ class Gtk::WorldShifter < Gtk::EventBox
   end
 
   def pluggaloid_event_listener
-    tag = Plugin[:gtk].handler_tag(:world_shifter) do
-      Plugin[:gtk].on_world_change_current{ refresh }
-      Plugin[:gtk].on_userconfig_modify do |key, newval|
+    tag = Plugin[:gtk3].handler_tag(:world_shifter) do
+      Plugin[:gtk3].on_world_change_current{ refresh }
+      Plugin[:gtk3].on_userconfig_modify do |key, newval|
         refresh if key == :world_shifter_visibility
       end
-      Plugin[:gtk].on_world_after_created do |world|
+      Plugin[:gtk3].on_world_after_created do |world|
         refresh
       end
-      Plugin[:gtk].on_world_destroy do |world|
+      Plugin[:gtk3].on_world_destroy do |world|
         refresh
       end
     end
     ssc(:destroy) do
-      Plugin[:gtk].detach(tag)
+      Plugin[:gtk3].detach(tag)
     end
   end
 

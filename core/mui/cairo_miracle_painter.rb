@@ -46,7 +46,7 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   # :nodoc:
   memoize def score
-    Plugin[:gtk].score_of(message)
+    Plugin[:gtk3].score_of(message)
   end
 
   # @@miracle_painters = Hash.new

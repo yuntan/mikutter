@@ -26,7 +26,7 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
 
   # :nodoc:
   memoize def score(message)
-    Plugin[:gtk].score_of(message)
+    Plugin[:gtk3].score_of(message)
   end
 
   # ヘッダの左の、Screen name、名前が表示されている場所に表示するテキスト。
