@@ -81,8 +81,9 @@ module Gtk
     def widget_post
       return @post if defined?(@post)
       @post = gen_widget_post
+      @post.hexpand = true
       post_set_default_text(@post)
-      @post.wrap_mode = Gtk::TextTag::WRAP_CHAR
+      @post.wrap_mode = :char
       @post.border_width = 2
       @post.buffer.ssc('changed') { |textview|
         refresh_buttons(false)
@@ -192,18 +193,22 @@ module Gtk
 
     def generate_box
       @reply_widgets = []
-      result = Gtk::HBox.new(false, 0).closeup(widget_tool).pack_start(widget_post).closeup(widget_remain).closeup(widget_send)
-      w_replies = Gtk::VBox.new
+      result = Gtk::Grid.new
+      result.orientation = :horizontal
+      result.add(widget_tool).add(widget_post).add(widget_remain).add(widget_send)
+      w_replies = Gtk::Grid.new
+      w_replies.orientation = :vertical
       w_replies.add(result)
       @to.select{|m|m.respond_to?(:description)}.each{ |message|
-        w_reply = Gtk::HBox.new
+        w_reply = Gtk::Grid.new
+        w_reply.orientation = :horizontal
         itv = Gtk::IntelligentTextview.new(message.description, 'font' => :mumble_basic_font)
         itv.style_generator = lambda{ get_backgroundstyle(message) }
         itv.bg_modifier
         ev = Gtk::EventBox.new
         ev.style = get_backgroundstyle(message)
-        w_reply.closeup(Gtk::WebIcon.new(message.icon, 32, 32).top) if message.respond_to?(:icon)
-        w_replies.closeup(ev.add(w_reply.add(itv)))
+        w_reply.add(Gtk::WebIcon.new(message.icon, 32, 32).top) if message.respond_to?(:icon)
+        w_replies.add(ev.add(w_reply.add(itv)))
         @reply_widgets << itv }
       w_replies end
 
