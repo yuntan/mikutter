@@ -261,7 +261,6 @@ Plugin.create :gtk3 do
   on_gui_timeline_add_messages do |i_timeline, messages|
     gtk_timeline = widgetof(i_timeline)
     gtk_timeline.add(messages) if gtk_timeline and not gtk_timeline.destroyed? end
-  end
 
   on_gui_postbox_join_widget do |i_postbox|
     type_strict i_postbox => Plugin::GUI::Postbox
