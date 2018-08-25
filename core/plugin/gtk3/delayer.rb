@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-require "gtk3"
-miquire :lib, "delayer"
+require 'glib2'
 
 Module.new do
 
   def self.boot
-    Gtk.idle_add_priority(GLib::PRIORITY_LOW) {
+    GLib::Idle.add do
       Delayer.run
-      false }
+      false
+    end
   end
 
   Delayer.register_remain_hook do
