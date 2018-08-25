@@ -85,10 +85,6 @@ class GLib::Instantiatable
 
 end
 
-class Gtk::Style
-  def self.main_quit
-    Gtk.main_quit end end
-
 module Gtk
   NO_ACTION = '(割り当てなし)'.freeze
   PRESS_WITH_CONTROL = 'Control + '.freeze

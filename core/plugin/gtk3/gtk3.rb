@@ -59,8 +59,7 @@ Plugin.create :gtk3 do
     window.ssc("destroy"){
       Delayer.freeze
       window.destroy
-      ::Gtk::Style.main_quit
-      # Gtk.main_quit
+      Gtk.main_quit
       false }
     window.ssc(:focus_in_event) {
       i_window.active!(true, true)
