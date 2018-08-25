@@ -87,7 +87,7 @@ class Gtk::FormDSL::Select
 
   # すべてテキストなら、コンボボックスで要素を描画する
   def build_combobox(config_key)
-    input = Gtk::ComboBox.new(true)
+    input = Gtk::ComboBoxText.new
     @options.each{ |t|
       input.append_text(t.last) }
     input.active = (@options.index{ |i| i.first.to_s == @parent_dslobj[config_key].to_s } || 0)
