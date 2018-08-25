@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+require 'pathname'
 require 'gtk3'
 require_relative 'toolbar_generator'
 require_relative 'world_shifter'
