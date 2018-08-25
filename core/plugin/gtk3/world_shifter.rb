@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require "gtk2"
+require 'gtk3'
 
 class Gtk::WorldShifter < Gtk::EventBox
   UserConfig[:gtk_accountbox_geometry] ||= 32
