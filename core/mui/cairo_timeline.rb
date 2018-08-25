@@ -29,7 +29,7 @@ class Gtk::TimeLine < Gtk::Box
       [] end end
 
   def initialize(imaginary=nil)
-    super()
+    super(:vertical)
     @tl = InnerTL.new
     @tl.imaginary = imaginary
     closeup(postbox).pack_start(init_tl)
@@ -49,8 +49,9 @@ class Gtk::TimeLine < Gtk::Box
     }
     @tl.set_size_request(100, 100)
     @tl.get_column(0).sizing = Gtk::TreeViewColumn::FIXED
-    @tl.ssc(:expose_event){
-      emit_expose_miraclepainter
+    @tl.ssc(:draw){
+      # FIXME: gtk3, visible_rangeが実装されていないのでemit_expose_miraclepainterを呼べない
+      # emit_expose_miraclepainter
       false }
 
     init_remover

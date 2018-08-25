@@ -33,7 +33,6 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
       false
     }
     last_motion_user = nil
-    usertip = Gtk::Tooltips.instance
     helper.ssc(:motion_notify_event){ |this, x, y|
       if 0 != height
         tipset = ''
@@ -47,18 +46,9 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
             last_motion_user = user
             if user
               tipset = user.title end end end
-        usertip.set_tip(helper.tree, tipset, '')
-        if tipset == ''
-          last_motion_user = nil
-          usertip.disable
-        else
-          usertip.enable end end
+        self.tooltip_text = tipset
+      end
       false }
-    helper.ssc(:leave_notify_event){
-      usertip.set_tip(helper.tree, '', '')
-      usertip.disable
-      false
-    }
   end
 
   def get_user_by_point(x)

@@ -70,7 +70,4 @@ class Gdk::SubParts
   def height
     0 end
 
-  def dummy_context
-    Gdk::Pixmap.new(nil, 1, 1, @helper.color).create_cairo_context end
-
 end

@@ -18,7 +18,7 @@ miquire :lib, 'uithreadonly'
 
 # 一つのMessageをPixbufにレンダリングするためのクラス。名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
 # 情報を設定してから、 Gdk::MiraclePainter#pixbuf で表示用の GdkPixbuf::Pixbuf のインスタンスを得ることができる。
-class Gdk::MiraclePainter < Gtk::Object
+class Gdk::MiraclePainter < Gtk::Widget
   extend Gem::Deprecate
 
   type_register
@@ -94,10 +94,11 @@ class Gdk::MiraclePainter < Gtk::Object
   signal_new(:click, GLib::Signal::RUN_FIRST, nil, nil,
              Gdk::EventButton, Integer, Integer)
 
-  signal_new(:motion_notify_event, GLib::Signal::RUN_FIRST, nil, nil,
-             Integer, Integer)
+  # TODO: gtk3, remove lines
+  # signal_new(:motion_notify_event, GLib::Signal::RUN_FIRST, nil, nil,
+  #            Integer, Integer)
 
-  signal_new(:leave_notify_event, GLib::Signal::RUN_FIRST, nil, nil)
+  # signal_new(:leave_notify_event, GLib::Signal::RUN_FIRST, nil, nil)
 
   def signal_do_click(event, cell_x, cell_y)
   end
@@ -314,10 +315,13 @@ class Gdk::MiraclePainter < Gtk::Object
 
   # 画面上にこれが表示されているかを返す
   def visible?
-    if tree
-      range = tree.visible_range
-      if range and 2 == range.size
-        Range.new(*range).cover?(tree.get_path_by_message(@message)) end end end
+    # TODO: gtk3, visible_rangeをgtk3 gemで定義する
+    # if tree
+    #   range = tree.visible_range
+    #   if range and 2 == range.size
+    #     Range.new(*range).cover?(tree.get_path_by_message(@message)) end end end
+    true
+  end
 
   def destroy
     def self.tree
@@ -338,12 +342,13 @@ class Gdk::MiraclePainter < Gtk::Object
 
   private
 
-  def dummy_context
-    Gdk::Pixmap.new(nil, 1, 1, color).create_cairo_context end
+  # TODO: gtk3, Gtk::Widget.create_pango_layoutで代替できるか確認する
+  # def dummy_context
+  #   Gdk::Pixmap.new(nil, 1, 1, color).create_cairo_context end
 
   # 本文のための Pango::Layout のインスタンスを返す
-  def main_message(context = dummy_context)
-    layout = context.create_pango_layout
+  def main_message
+    layout = create_pango_layout
     font = Plugin.filtering(:message_font, message, nil).last
     layout.font_description = font_description(font) if font
     layout.width = pos.main_text.width * Pango::SCALE
@@ -351,7 +356,8 @@ class Gdk::MiraclePainter < Gtk::Object
     layout.wrap = Pango::WrapMode::CHAR
     color = Plugin.filtering(:message_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
-    context.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
+    # FIXME: gtk3, find alternative method
+    # context.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
     layout.text = plain_description
     layout.context.set_shape_renderer do |c, shape, _|
       photo = shape.data
@@ -378,21 +384,22 @@ class Gdk::MiraclePainter < Gtk::Object
   # ==== Return
   # [Integer] 高さ(px)
   memoize def emoji_height(font)
-    layout = dummy_context.create_pango_layout
+    layout = create_pango_layout
     layout.font_description = font
     layout.text = '.'
     layout.pixel_size[1]
   end
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
-  def header_left(context = dummy_context)
+  def header_left
     attr_list, text = header_left_markup
     color = Plugin.filtering(:message_header_left_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
     font = Plugin.filtering(:message_header_left_font, message, nil).last
-    layout = context.create_pango_layout
+    layout = create_pango_layout
     layout.attributes = attr_list
-    context.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
+    # FIXME: gtk3, find alternative method
+    # context.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
     layout.font_description = font_description(font) if font
     layout.text = text
     layout end
@@ -407,10 +414,10 @@ class Gdk::MiraclePainter < Gtk::Object
   end
 
   # ヘッダ（右）のための Pango::Layout のインスタンスを返す
-  def header_right(context = dummy_context)
+  def header_right
     hms = timestamp_label
     attr_list, text = Pango.parse_markup(hms)
-    layout = context.create_pango_layout
+    layout = create_pango_layout
     layout.attributes = attr_list
     font = Plugin.filtering(:message_header_right_font, message, nil).last
     layout.font_description = font_description(font) if font
