@@ -6,7 +6,7 @@ require_relative 'listener'
 
 miquire :mui, 'form_dsl', 'form_dsl_select', 'form_dsl_multi_select'
 
-require 'gtk2'
+require 'gtk3'
 
 =begin rdoc
 プラグインに、簡単に設定ファイルを定義する機能を提供する。
@@ -23,7 +23,7 @@ settingsの中身は、 Plugin::Settings のインスタンスの中で実行さ
 (チェックボックス)。明確にウィジェットを設定できるわけではなくて、値の意味を定義するだけなので、
 前後関係などに影響されてウィジェットが変わる場合があるかも。
 =end
-class Plugin::Settings::SettingDSL < Gtk::VBox
+class Plugin::Settings::SettingDSL < Gtk::Box
   include Gtk::FormDSL
 
   def create_inner_setting
@@ -33,7 +33,7 @@ class Plugin::Settings::SettingDSL < Gtk::VBox
   def initialize(plugin)
     type_strict plugin => Plugin
     @plugin = plugin
-    super()
+    super(:vertical, 0)
   end
 
   def [](key)

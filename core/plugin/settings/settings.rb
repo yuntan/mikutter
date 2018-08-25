@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#
+require 'pathname'
 
 module Plugin::Settings; end
 
@@ -21,12 +23,18 @@ Plugin.create(:settings) do
 
   def setting_window
     return @window if defined?(@window) and @window
-    @window = window = ::Gtk::Window.new(_('設定'))
-    window.set_size_request(320, 240)
-    window.set_default_size(640, 480)
+    builder = Gtk::Builder.new
+    s = (Pathname(__FILE__).dirname / 'settings.glade').to_s
+    builder.add_from_file s
+    @window = builder.get_object 'window'
+    rect = { width: 256, height: 256 }
+    @window.icon = Skin['settings.png'].load_pixbuf(**rect) do |pb|
+      @window.destroyed? or @window.icon = pb
+    end
+    settings = builder.get_object 'settings'
+    scrolled_menu = builder.get_object 'scrolled_menu'
     menu = Plugin::Settings::Menu.new
-    settings = ::Gtk::VBox.new
-    scrolled = ::Gtk::ScrolledWindow.new.set_hscrollbar_policy(::Gtk::POLICY_NEVER)
+    scrolled_menu.add_with_viewport menu
 
     menu.ssc(:cursor_changed) do
       if menu.selection.selected
@@ -34,19 +42,17 @@ Plugin.create(:settings) do
         if active_iter
           settings.hide
           settings.children.each(&settings.method(:remove))
-          settings.closeup(active_iter[Plugin::Settings::Menu::COL_RECORD].widget).show_all
+          settings.add(active_iter[Plugin::Settings::Menu::COL_RECORD].widget).show_all
         end
       end
       false
     end
 
-    window.ssc(:destroy) {
+    @window.ssc(:destroy) {
       @window = nil
       false
     }
 
-    scrolled_menu = ::Gtk::ScrolledWindow.new.set_policy(::Gtk::POLICY_NEVER, ::Gtk::POLICY_AUTOMATIC)
-
-    window.add(::Gtk::HPaned.new.add1(scrolled_menu.add_with_viewport(menu)).add2(scrolled.add_with_viewport(settings)))
+    @window
   end
 end
