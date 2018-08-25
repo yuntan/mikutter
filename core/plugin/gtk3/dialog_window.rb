@@ -131,7 +131,7 @@ module Plugin::Gtk
     end
   end
 
-  class DialogContainer < Gtk::VBox
+  class DialogContainer < Gtk::Box
     EXIT = :exit
     AWAIT = :await
 
@@ -180,7 +180,7 @@ module Plugin::Gtk
       @values = default
       @proc = proc
       reset
-      super(){}
+      super(:vertical){}
     end
 
     def run(response=nil)
