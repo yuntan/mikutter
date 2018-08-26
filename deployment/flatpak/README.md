@@ -9,9 +9,9 @@ flatpak-builder
 ### Update version number in config
 Edit 2 files.
 
-1. `net.hachune.mikutter.mikutter.git-source.json`  
+1. `net.hachune.mikutter.git-source.json`  
    Update `"tag"` field.
-2. `net.hachune.mikutter.mikutter.appdata.xml`  
+2. `net.hachune.mikutter.appdata.xml`  
    Prepend new `<release/>` element to `<releases>`.
 
 ### Update RubyGems dependencies
@@ -20,7 +20,7 @@ Edit 2 files.
 git checkout X.Y.Z # checkout correct revision
 rm -rf vendor/cache
 bundle package # cache gems in vendor/cache
-ruby path/to/flatpak_rubygems_generator.rb --source net.hachune.mikutter.mikutter.git-source.json -o net.hachune.mikutter.mikutter.rubygems-module.json # update json
+ruby deployment/flatpak/flatpak_rubygems_generator.rb --source deployment/flatpak/net.hachune.mikutter.git-source.json -o deployment/flatpak/net.hachune.mikutter.rubygems-module.json # update json
 ```
 
 BUILD
@@ -28,13 +28,13 @@ BUILD
 ```bash
 # pwd is deployment/flatpak
 flatpak install flathub org.gnome.Platform//3.26 org.gnome.Sdk//3.26
-flatpak-builder build net.hachune.mikutter.mikutter.json
+flatpak-builder build net.hachune.mikutter.json
 # to rebuild
-flatpak-builder --force-clean build net.hachune.mikutter.mikutter.json
+flatpak-builder --force-clean build net.hachune.mikutter.json
 ```
 
 TEST
 ----
 ```bash
-flatpak-builder --run build net.hachune.mikutter.mikutter.json mikutter
+flatpak-builder --run build net.hachune.mikutter.json mikutter
 ```
