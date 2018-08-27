@@ -87,6 +87,7 @@ Plugin.create :gtk3 do
     pane.scrollable = true
     pane.show_border = false
     pane.set_tab_pos(TABPOS[UserConfig[:tab_position]])
+    pane.hexpand = true
     tab_position_listener = on_userconfig_modify do |key, val|
       next if key != :tab_position
       if pane.destroyed?
