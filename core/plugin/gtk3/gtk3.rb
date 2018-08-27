@@ -519,13 +519,15 @@ Plugin.create :gtk3 do
     if container_index
       container = pane.get_nth_page(container_index)
       if container
-        return container.pack_start(widget, i_tab.pack_rule[container.children.size]) end end
+        widget.vexpand = i_tab.pack_rule[container.children.size]
+        return container.add(widget) end end
     if tab.parent
       raise Plugin::Gtk::GtkError, "Gtk Widget #{tab.inspect} of Tab(#{i_tab.slug.inspect}) has parent Gtk Widget #{tab.parent.inspect}" end
     container = ::Gtk::TabContainer.new(i_tab).show_all
     container.ssc(:key_press_event){ |w, event|
       Plugin::GUI.keypress(::Gtk::keyname([event.keyval ,event.state]), i_tab) }
-    container.pack_start(widget, i_tab.pack_rule[container.children.size])
+    widget.vexpand = i_tab.pack_rule[container.children.size]
+    container.add(widget)
     pane.append_page(container, tab)
     pane.set_tab_reorderable(container, true).set_tab_detachable(container, true)
     true end
