@@ -182,40 +182,51 @@ class Gtk::Lock
   end
 end
 
+# TODO: gtk3: remove it
 class Gtk::Widget
+  extend Gem::Deprecate
+
   # ウィジェットを上寄せで配置する
   def top
     Gtk::Alignment.new(0.0, 0, 0, 0).add(self)
   end
+  deprecate :top, :valign=, 2018, 9
 
   # ウィジェットを横方向に中央寄せで配置する
   def center
     Gtk::Alignment.new(0.5, 0, 0, 0).add(self)
   end
+  deprecate :center, :halign=, 2018, 9
 
   # ウィジェットを左寄せで配置する
   def left
     Gtk::Alignment.new(0, 0, 0, 0).add(self)
   end
+  deprecate :left, :halign=, 2018, 9
 
   # ウィジェットを右寄せで配置する
   def right
     Gtk::Alignment.new(1.0, 0, 0, 0).add(self)
   end
+  deprecate :right, :halign=, 2018, 9
 
   # ウィジェットにツールチップ _text_ をつける
   def tooltip(text)
     self.tooltip_text = text
     self end
+  deprecate :tooltip, :tooltip_text=, 2018, 9
 
 end
 
 class Gtk::Box < Gtk::Container
+  extend Gem::Deprecate
+
   # _widget_ を詰めて配置する。closeupで配置されたウィジェットは無理に親の幅に合わせられることがない。
   # pack_start(_widget_, false)と等価。
   def closeup(widget)
     pack_start(widget, expand: false)
   end
+  deprecate :closeup, :none, 2018, 9
 end
 
 class Gtk::TextBuffer < GLib::Object
