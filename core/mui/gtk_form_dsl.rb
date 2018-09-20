@@ -36,7 +36,7 @@ module Gtk::FormDSL
       self[config] = widget.text
       false
     }
-    closeup container
+    add container
     container
   end
 
@@ -55,7 +55,7 @@ module Gtk::FormDSL
       self[config] = widget.value.to_i
       false
     }
-    closeup container.pack_start(Gtk::Alignment.new(1.0, 0.5, 0, 0).add(spinner), true, true, 0)
+    add container.pack_start(Gtk::Alignment.new(1.0, 0.5, 0, 0).add(spinner), true, true, 0)
     container
   end
 
@@ -70,7 +70,7 @@ module Gtk::FormDSL
       self[config] = widget.active?
       false
     }
-    closeup input
+    add input
     input
   end
 
@@ -125,7 +125,7 @@ module Gtk::FormDSL
       self[config] = widget.text
       false
     }
-    closeup container
+    add container
     container
   end
 
@@ -144,7 +144,7 @@ module Gtk::FormDSL
       self[config] = widget.text
       false
     }
-    closeup container
+    add container
     container
   end
 
@@ -182,7 +182,7 @@ module Gtk::FormDSL
       }
       container.pack_start(box, true, true, 0)
       container.pack_start(Gtk::Alignment.new(1.0, 1.0, 0, 0).add(btn_add), false, true, 0)
-      closeup container
+      add container
       container
     end
   end
@@ -199,7 +199,7 @@ module Gtk::FormDSL
       group.set_label(title) end
     box = create_inner_setting.set_border_width(4)
     box.instance_eval(&Proc.new)
-    closeup group.add(box)
+    add group.add(box)
     group
   end
 
@@ -232,7 +232,7 @@ module Gtk::FormDSL
         false
       }
     }
-    closeup about
+    add about
     about
   end
 
@@ -241,7 +241,7 @@ module Gtk::FormDSL
   # [label] ラベル
   # [config] 設定のキー
   def font(label, config)
-    closeup container = Gtk::HBox.new(false, 0).add(Gtk::Label.new(label).left).closeup(fontselect(label, config))
+    add container = Gtk::HBox.new(false, 0).add(Gtk::Label.new(label).left).closeup(fontselect(label, config))
     container
   end
 
@@ -250,7 +250,7 @@ module Gtk::FormDSL
   # [label] ラベル
   # [config] 設定のキー
   def color(label, config)
-    closeup container = Gtk::HBox.new(false, 0).add(Gtk::Label.new(label).left).closeup(colorselect(label, config))
+    add container = Gtk::HBox.new(false, 0).add(Gtk::Label.new(label).left).closeup(colorselect(label, config))
     container
   end
 
@@ -260,7 +260,7 @@ module Gtk::FormDSL
   # [font] フォントの設定のキー
   # [color] 色の設定のキー
   def fontcolor(label, font, color)
-    closeup container = font(label, font).closeup(colorselect(label, color))
+    add container = font(label, font).closeup(colorselect(label, color))
     container
   end
 
@@ -275,7 +275,7 @@ module Gtk::FormDSL
   def select(label, config, default = {})
     builder = Gtk::FormDSL::Select.new(self, default)
     builder.instance_eval(&Proc.new) if block_given?
-    closeup container = builder.build(label, config)
+    add container = builder.build(label, config)
     container
   end
 
@@ -290,7 +290,7 @@ module Gtk::FormDSL
   def multiselect(label, config, default = {})
     builder = Gtk::FormDSL::MultiSelect.new(self, default)
     builder.instance_eval(&Proc.new) if block_given?
-    closeup container = builder.build(label, config)
+    add container = builder.build(label, config)
     container
   end
 
@@ -300,7 +300,7 @@ module Gtk::FormDSL
     label.
       set_wrap(true).
       set_single_line_mode(false)
-    closeup label.left
+    add label.left
     label
   end
 
@@ -321,7 +321,7 @@ module Gtk::FormDSL
         tooltip(target.to_s).
         set_alignment(0.0, 0.5).
         ssc(:clicked, &model_opener(target))
-      closeup button
+      add button
     when Diva::Model
       button = Gtk::Button.new
       box = Gtk::HBox.new
@@ -333,7 +333,7 @@ module Gtk::FormDSL
         tooltip(target.title).
         add(box.add(Gtk::Label.new(target.title))).
         ssc(:clicked, &model_opener(target))
-      closeup button
+      add button
     end
   end
 
