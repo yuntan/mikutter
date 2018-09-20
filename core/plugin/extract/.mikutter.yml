@@ -3,7 +3,7 @@ slug: :extract
 depends:
   mikutter: '0.2'
   plugin:
-  - gtk
+  - gtk3
   - settings
   - gui
   - uitranslator

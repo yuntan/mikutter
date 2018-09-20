@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 miquire :mui, 'form_dsl', 'form_dsl_select', 'form_dsl_multi_select'
 
-class Plugin::Extract::OptionWidget < Gtk::VBox
+class Plugin::Extract::OptionWidget < Gtk::Box
   include Gtk::FormDSL
 
   def create_inner_setting
@@ -11,7 +11,7 @@ class Plugin::Extract::OptionWidget < Gtk::VBox
   def initialize(plugin, extract)
     @plugin = plugin
     @extract = extract
-    super()
+    super(:vertical)
   end
 
   def [](key)

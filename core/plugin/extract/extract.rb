@@ -69,26 +69,31 @@ Plugin.create :extract do
     @extract_tabs ||= {} end
 
   settings _("抽出タブ") do
+    builder = Gtk::Builder.new
+    s = (Pathname(__FILE__).dirname / 'extract_settings.glade').to_s
+    builder.add_from_file s
+
     tablist = Plugin::Extract::ExtractTabList.new(Plugin[:extract])
-    pack_start(Gtk::HBox.new.
-               add(tablist).
-               closeup(Gtk::VBox.new(false, 4).
-                       closeup(Gtk::Button.new(Gtk::Stock::ADD).tap{ |button|
-                                 button.ssc(:clicked) {
-                                   Plugin.call :extract_tab_open_create_dialog
-                                   true } }).
-                       closeup(Gtk::Button.new(Gtk::Stock::EDIT).tap{ |button|
-                                 button.ssc(:clicked) {
-                                   id = tablist.selected_id
-                                   if id
-                                     Plugin.call(:extract_open_edit_dialog, id) end
-                                   true } }).
-                       closeup(Gtk::Button.new(Gtk::Stock::DELETE).tap{ |button|
-                                 button.ssc(:clicked) {
-                                   id = tablist.selected_id
-                                   if id
-                                     Plugin.call(:extract_tab_delete_with_confirm, id) end
-                                   true } })))
+
+    grid = builder.get_object 'grid'
+    add grid
+    grid.attach tablist, 0, 0, 1, 1
+
+    builder.get_object('btn_add').ssc(:clicked) do
+      Plugin.call :extract_tab_open_create_dialog, toplevel
+      true
+    end
+    builder.get_object('btn_edit').ssc(:clicked) do
+      id = tablist.selected_id
+      id and Plugin.call :extract_open_edit_dialog, id
+      true
+    end
+    builder.get_object('btn_remove').ssc(:clicked) do
+      id = tablist.selected_id
+      id and Plugin.call :extract_tab_delete_with_confirm, toplevel, id
+      true
+    end
+
     Plugin.create :extract do
       add_tab_observer = on_extract_tab_create(&tablist.method(:add_record))
       delete_tab_observer = on_extract_tab_delete(&tablist.method(:remove_record))
@@ -181,35 +186,54 @@ Plugin.create :extract do
       extract_tabs.delete(id)
       modify_extract_tabs end end
 
-  on_extract_tab_delete_with_confirm do |id|
+  on_extract_tab_delete_with_confirm do |window, id|
     extract = extract_tabs[id]
-    if extract
-      message = _("本当に抽出タブ「%{name}」を削除しますか？") % {name: extract.name}
-      dialog = Gtk::MessageDialog.new(nil,
-                                      Gtk::Dialog::DESTROY_WITH_PARENT,
-                                      Gtk::MessageDialog::QUESTION,
-                                      Gtk::MessageDialog::BUTTONS_YES_NO,
-                                      message)
-      dialog.run{ |response|
-        if Gtk::Dialog::RESPONSE_YES == response
-          Plugin.call :extract_tab_delete, id end
-        dialog.close } end end
+    extract or next
 
-  on_extract_tab_open_create_dialog do
-    dialog = Gtk::Dialog.new(_("抽出タブを作成 - %{mikutter}") % {mikutter: Environment::NAME}, nil, nil,
-                             [Gtk::Stock::OK, Gtk::Dialog::RESPONSE_ACCEPT],
-                             [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_REJECT])
-    prompt = Gtk::Entry.new
-    dialog.vbox.
-      add(Gtk::HBox.new(false, 8).
-          closeup(Gtk::Label.new(_("名前"))).
-          add(prompt).show_all)
-    dialog.run{ |response|
-      if Gtk::Dialog::RESPONSE_ACCEPT == response
-        Plugin.call(:extract_tab_create, Plugin::Extract::Setting.new(name: prompt.text))
-      end
-      dialog.destroy
-      prompt = dialog = nil } end
+    message = _("本当に抽出タブ「%{name}」を削除しますか？") % {name: extract.name}
+
+    # MessageDialog.newする方がBuilderを使うよりも見栄えが良くなる
+    # builder = Gtk::Builder.new
+    # s = (Pathname(__FILE__).dirname / 'extract_settings.glade').to_s
+    # builder.add_from_file s
+
+    # dialog = builder.get_object('dlg_delete')
+    # dialog.text = message
+    # dialog.set_transient_for window
+
+    dialog = Gtk::MessageDialog.new(parent: window,
+                                    type: :question,
+                                    buttons: :none,
+                                    message: message)
+    dialog.add_button Gtk::Stock::CANCEL, :reject
+    btn_remove = dialog.add_button Gtk::Stock::REMOVE, :accept
+    btn_remove.style_context.add_class 'destructive-action'
+    case dialog.run
+    when Gtk::ResponseType::ACCEPT
+      Plugin.call :extract_tab_delete, id
+    end
+    dialog.destroy
+  end
+
+  on_extract_tab_open_create_dialog do |window|
+    builder = Gtk::Builder.new
+    s = (Pathname(__FILE__).dirname / 'extract_settings.glade').to_s
+    builder.add_from_file s
+
+    title = _("抽出タブを作成 - %{mikutter}") % {mikutter: Environment::NAME}
+
+    dialog = builder.get_object('dlg_add')
+    dialog.title = title
+    dialog.set_transient_for window
+    builder.get_object('dlg_add_label').text = _('名前')
+    entry = builder.get_object 'dlg_add_entry'
+
+    case dialog.run
+    when Gtk::ResponseType::ACCEPT
+      Plugin.call(:extract_tab_create, Plugin::Extract::Setting.new(name: entry.text))
+    end
+    dialog.destroy
+  end
 
   on_extract_open_edit_dialog do |extract_id|
     window = ::Plugin::Extract::EditWindow.new(extract_tabs[extract_id], self)

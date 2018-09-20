@@ -17,14 +17,16 @@ class  Plugin::Extract::EditWindow < Gtk::Window
     @plugin = plugin
     @extract = extract
     super(_('%{name} - 抽出タブ - %{application_name}') % {name: name, application_name: Environment::NAME})
-    add(Gtk::VBox.new().
-        add(Gtk::Notebook.new.
-            append_page(source_widget, Gtk::Label.new(_('データソース'))).
-            append_page(condition_widget, Gtk::Label.new(_('絞り込み条件'))).
-            append_page(option_widget, Gtk::Label.new(_('オプション')))).
-        closeup(Gtk::EventBox.new().
-                add(Gtk::HBox.new().
-                    closeup(ok_button).right)))
+
+    notebook = Gtk::Notebook.new
+    notebook.expand = true
+    notebook.append_page(source_widget, Gtk::Label.new(_('データソース')))
+    notebook.append_page(condition_widget, Gtk::Label.new(_('絞り込み条件')))
+    notebook.append_page(option_widget, Gtk::Label.new(_('オプション')))
+    add(Gtk::Grid.new
+        .tap { |grid| grid.orientation = :vertical }
+        .add(notebook)
+        .add(ok_button.tap { |w| w.halign = :end }))
     ssc(:destroy) do
       @extract.notify_update
       false
@@ -64,19 +66,14 @@ class  Plugin::Extract::EditWindow < Gtk::Window
       [id, source_name.is_a?(String) ? source_name.split('/'.freeze) : source_name] end
     datasources_box = Gtk::HierarchycalSelectBox.new(datasources, sources){
       modify_value sources: datasources_box.selected.to_a }
-    scrollbar = ::Gtk::VScrollbar.new(datasources_box.vadjustment)
-    @source_widget ||= Gtk::HBox.new().
-      add(datasources_box).
-      closeup(scrollbar) end
+    @source_widget ||= Gtk::ScrolledWindow.new.add datasources_box
+  end
 
   def condition_widget
-    @condition_widget ||= Gtk::VBox.new().
-      add(condition_form) end
-
-  def condition_form
-    @condition_form = Gtk::MessagePicker.new(sexp.freeze){
-      modify_value sexp: @condition_form.to_a
-    } end
+    @condition_widget ||= Gtk::MessagePicker.new(sexp.freeze) do
+      modify_value sexp: @condition_widget.to_a
+    end.tap { |w| w.expand = true }
+  end
 
   def option_widget
     Plugin::Extract::OptionWidget.new(@plugin, @extract) do
