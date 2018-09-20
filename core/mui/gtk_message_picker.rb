@@ -7,7 +7,7 @@ miquire :mui, 'extension'
 miquire :mui, 'webicon'
 miquire :miku, 'miku'
 
-class Gtk::MessagePicker < Gtk::EventBox
+class Gtk::MessagePicker < Gtk::Frame
   DEFAULT_CONDITION = [:==, :user, ''.freeze].freeze
 
   def initialize(conditions, &block)
@@ -17,28 +17,36 @@ class Gtk::MessagePicker < Gtk::EventBox
     if(@not)
       conditions = (conditions[1] or []).freeze end
     @changed_hook = block
-    shell = Gtk::VBox.new
-    @container = Gtk::VBox.new
     @function, *exprs = *conditions.to_a
     @function ||= :and
-    shell.add(@container)
-    shell.closeup(add_button.center)
+
+    self.border_width = 8
+    self.label_widget = option_widgets
+
+    shell = Gtk::Grid.new
+    shell.orientation = :vertical
+    @container = Gtk::Grid.new
+    @container.orientation = :vertical
+    @container.expand = true
+    buttons = add_button
+    buttons.halign = :center
+    add(shell.add(@container).add(buttons))
+
     exprs.each{|x| add_condition(x) }
-    add(Gtk::Frame.new.set_border_width(8).set_label_widget(option_widgets).add(shell))
   end
 
   def function(new = @function)
     (new ? :or : :and) end
 
   def option_widgets
-    @option_widgets ||= Gtk::HBox.new.
-      closeup(Mtk::boolean(lambda{ |new|
+    @option_widgets ||= Gtk::Grid.new.
+      add(Mtk::boolean(lambda{ |new|
                              unless new.nil?
                                @function = function(new)
                                call end
                              @function == :or },
                            'いずれかにマッチする')).
-      closeup(Mtk::boolean(lambda{ |new|
+      add(Mtk::boolean(lambda{ |new|
                              unless new.nil?
                                @not = new
                                call end
@@ -49,23 +57,32 @@ class Gtk::MessagePicker < Gtk::EventBox
     @add_button ||= gen_add_button end
 
   def add_condition(expr = DEFAULT_CONDITION)
-    pack = Gtk::HBox.new
+    pack = Gtk::Grid.new
     close = Gtk::Button.new.add(Gtk::WebIcon.new(Skin['close.png'], 16, 16)).set_relief(Gtk::RELIEF_NONE)
+    close.valign = :start
     close.signal_connect(:clicked){
       @container.remove(pack)
       pack.destroy
       call
       false }
-    pack.closeup(close.top)
+    pack.add(close)
     case expr.first
     when :and, :or, :not
       pack.add(Gtk::MessagePicker.new(expr, &method(:call)))
     else
       pack.add(Gtk::MessagePicker::PickCondition.new(expr, &method(:call))) end
-    @container.closeup(pack) end
+    @container.add(pack) end
 
   def to_a
-    result = [@function, *@container.children.map{|x| x.children.last.to_a}.reject(&:empty?)].freeze
+    result = [
+      @function,
+      *@container.children.map do |c| # c: Gtk::Grid
+        c.children.select do |w| # w: Gtk::Widget
+          (w.is_a?(Gtk::MessagePicker) ||
+           w.is_a?(Gtk::MessagePicker::PickCondition))
+        end.first.to_a
+      end.reject(&:empty?)
+    ].freeze
     if result.size == 1
       [].freeze
     else
@@ -80,18 +97,18 @@ class Gtk::MessagePicker < Gtk::EventBox
       @changed_hook.call end end
 
   def gen_add_button
-    container = Gtk::HBox.new
+    container = Gtk::Grid.new
     btn = Gtk::Button.new('条件を追加')
     btn.signal_connect(:clicked){
       add_condition.show_all }
     btn2 = Gtk::Button.new('サブフィルタを追加')
     btn2.signal_connect(:clicked){
       add_condition([:and, DEFAULT_CONDITION]).show_all }
-    container.closeup(btn).closeup(btn2) end
+    container.add(btn).add(btn2) end
 
-  class PickCondition < Gtk::HBox
-    def initialize(conditions = DEFAULT_CONDITION, *args, &block)
-      super(*args)
+  class PickCondition < Gtk::Grid
+    def initialize(conditions = DEFAULT_CONDITION, &block)
+      super()
       @changed_hook = block
       @condition, @subject, @expr = *conditions.to_a
       build
@@ -131,8 +148,8 @@ class Gtk::MessagePicker < Gtk::EventBox
                                      @subject.to_s },
                                    nil,
                                    Hash[extract_condition.map{ |slug, ec| [slug.to_s, ec.name] }])
-      closeup(w_condition)
-      closeup(w_operator)
+      add(w_condition)
+      add(w_operator)
       add(w_argument)
     end
   end

@@ -34,7 +34,7 @@ module Mtk
         else
           UserConfig[key] = new end } end
     container = Gtk::HBox.new(false, 0)
-    input = Gtk::ComboBox.new(true)
+    input = Gtk::ComboBoxText.new
     sorted = values.keys.sort_by(&:to_s).freeze
     sorted.each{ |x|
       input.append_text(values[x].respond_to?(:call) ? values[x].call(nil) : values[x])
