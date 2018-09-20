@@ -439,8 +439,12 @@ module Gtk::FormDSL
       Plugin.call(:open, fs_photo_thumbnail(path.text) || path.text) if event.button == 1
       false
     end
-    image_container.ssc_atonce(:realize) do |this|
-      this.window.set_cursor(Gdk::Cursor.new(Gdk::Cursor::HAND2))
+    image_container.ssc :enter_notify_event do |w|
+      w.window.cursor = Gdk::Cursor.new 'pointer'
+      false
+    end
+    image_container.ssc :leave_notify_event do |w|
+      w.window.cursor = Gdk::Cursor.new 'default'
       false
     end
     button.signal_connect(:clicked, &gen_fileselect_dialog_generator(title, action, dir, config: config, shortcuts: shortcuts, filters: filters, use_preview: use_preview, &path.method(:text=)))
