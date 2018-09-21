@@ -4,11 +4,11 @@ require "gtk3"
 
 require_relative 'toolbar_generator'
 
-class Gtk::TabToolbar < Gtk::HBox
-  def initialize(imaginally, *args)
+class Gtk::TabToolbar < Gtk::Grid
+  def initialize(imaginally)
     type_strict imaginally => Plugin::GUI::TabToolbar
     @imaginally = imaginally
-    super(*args)
+    super()
   end
 
   def set_button
