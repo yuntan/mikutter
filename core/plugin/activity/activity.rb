@@ -132,40 +132,39 @@ Plugin.create(:activity) do
       [data] end end
 
   activity_view = ActivityView.new(self)
-  activity_vscrollbar = ::Gtk::VScrollbar.new(activity_view.vadjustment)
-  activity_hscrollbar = ::Gtk::HScrollbar.new(activity_view.hadjustment)
-  activity_shell = ::Gtk::Table.new(2, 2)
+  activity_view_sw = Gtk::ScrolledWindow.new.add activity_view
   activity_description = ::Gtk::IntelligentTextview.new
   activity_status = ::Gtk::Label.new
-  activity_container = ::Gtk::VPaned.new
-  activity_detail_view = Gtk::VBox.new
-  activity_scroll_view = Gtk::ScrolledWindow.new
   activity_model_selector = Plugin::Activity::ModelSelector.new
 
   reset_activity(activity_view.model)
 
-  activity_scroll_view.
-    set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC).
-    set_height_request(88)
-  activity_detail_view.
-    set_height_request(128)
-
-  activity_container.
-    pack1(activity_shell.
-               attach(activity_view, 0, 1, 0, 1, ::Gtk::FILL|::Gtk::SHRINK|::Gtk::EXPAND, ::Gtk::FILL|::Gtk::SHRINK|::Gtk::EXPAND).
-               attach(activity_vscrollbar, 1, 2, 0, 1, ::Gtk::FILL, ::Gtk::SHRINK|::Gtk::FILL).
-               attach(activity_hscrollbar, 0, 1, 1, 2, ::Gtk::SHRINK|::Gtk::FILL, ::Gtk::FILL),
-          true, true).
-    pack2(activity_detail_view, true, false)
-  activity_scroll_view.add_with_viewport(activity_description)
-  activity_detail_view.
-    add(activity_scroll_view).
-    closeup(activity_model_selector).
-    closeup(activity_status.right)
+  # TODO: gtk3
+  # activity_scroll_view.
+  #   set_height_request(88)
+  # activity_detail_view.
+  #   set_height_request(128)
 
   tab(:activity, _("アクティビティ")) do
     set_icon Skin['activity.png']
-    nativewidget ::Gtk::EventBox.new.add(activity_container)
+    activity_status.halign = :end
+    detail_view = Gtk::Grid.new
+      .tap { |w| w.orientation = :vertical }
+      .add(Gtk::ScrolledWindow.new
+        .tap do |w|
+          w.expand = true
+          w.hscrollbar_policy = :never
+          w.vscrollbar_policy = :automatic
+        end
+        .add(activity_description))
+      .add(activity_model_selector)
+      .add(activity_status)
+
+    nativewidget(
+      Gtk::Paned.new(:vertical)
+        .pack1(activity_view_sw, true, true)
+        .pack2(detail_view, true, false)
+    )
   end
 
   activity_view.ssc("cursor-changed") { |this|
@@ -195,6 +194,7 @@ Plugin.create(:activity) do
           Plugin.filtering(:photo_filter, params[:icon], y)
         }.first
       end
+      # FIXME: gtk3
       activity_view.scroll_to_zero_lator! if activity_view.realized? and activity_view.vadjustment.value == 0.0
       model = Plugin::Activity::Activity.new(params)
       next if @contains_uris.include?(model.uri.to_s)
