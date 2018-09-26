@@ -32,6 +32,7 @@ Plugin.create :gtk3 do
     window = new_mikutter_window i_window, self
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
+    # FIXME: 小さすぎる
     window.set_size_request(240, 240)
     # FIXME: gtk3, find alternative method
     # geometry = get_window_geometry(i_window.slug)
@@ -220,17 +221,10 @@ Plugin.create :gtk3 do
   on_gui_pane_join_window do |i_pane, i_window|
     window = widgetof(i_window)
     pane = widgetof(i_pane)
-    if pane.parent
-      if pane.parent != window.panes
-        pane.parent.remove(pane)
-        # FIXME: gtk3, Gridに合わせて書き換える
-        # window.panes.pack_end(pane, false).show_all end
-        window.panes.add(pane).show_all end
-    else
-      # FIXME: gtk3, Gridに合わせて書き換える
-      # window.panes.pack_end(pane, false).show_all
-      window.panes.add(pane).show_all
-    end
+    pane.parent && pane.parent != window.panes and pane.parent.remove(pane)
+    # 左端にペインを追加
+    pane.parent && pane.parent == window.panes or
+      window.panes.attach_next_to pane, nil, :left, 1, 1
   end
 
   on_gui_tab_join_pane do |i_tab, i_pane|
