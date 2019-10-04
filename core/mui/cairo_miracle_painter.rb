@@ -115,16 +115,15 @@ class Gdk::MiraclePainter < Gtk::Widget
     @tree = new
     self end
 
-  # TLに表示するための Gdk::Pixmap のインスタンスを返す
-  def pixmap
-    @pixmap ||= gen_pixmap
-  end
-
   # TLに表示するための GdkPixbuf::Pixbuf のインスタンスを返す
   def pixbuf
     return @pixbuf if @pixbuf
     if visible?
-      @pixbuf = gen_pixbuf
+      Cairo::ImageSurface.new(width, height) do |s|
+        ctx = Cairo::Context.new(s)
+        render_to_context(ctx)
+        @pixbuf = s.to_pixbuf
+      end
       if(@pixbuf and defined?(@last_modify_height) and @last_modify_height != @pixbuf.height)
         tree.get_column(0).queue_resize
         @last_modify_height = @pixbuf.height end
@@ -306,7 +305,6 @@ class Gdk::MiraclePainter < Gtk::Widget
   def on_modify(event=true)
     if not destroyed?
       @modify_source = caller(1)
-      @pixmap = nil
       @pixbuf = nil
       @coordinate = nil
       signal_emit('modified') if event
@@ -342,13 +340,9 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   private
 
-  # TODO: gtk3, Gtk::Widget.create_pango_layoutで代替できるか確認する
-  # def dummy_context
-  #   Gdk::Pixmap.new(nil, 1, 1, color).create_cairo_context end
-
   # 本文のための Pango::Layout のインスタンスを返す
-  def main_message
-    layout = create_pango_layout
+  def main_message(context = nil)
+    layout = context&.create_pango_layout || create_pango_layout
     font = Plugin.filtering(:message_font, message, nil).last
     layout.font_description = font_description(font) if font
     layout.width = pos.main_text.width * Pango::SCALE
@@ -356,8 +350,7 @@ class Gdk::MiraclePainter < Gtk::Widget
     layout.wrap = Pango::WrapMode::CHAR
     color = Plugin.filtering(:message_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
-    # FIXME: gtk3, find alternative method
-    # context.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
+    context.set_source_rgb(*color.map{ |c| c.to_f / 65536 }) if context
     layout.text = plain_description
     layout.context.set_shape_renderer do |c, shape, _|
       photo = shape.data
@@ -391,15 +384,14 @@ class Gdk::MiraclePainter < Gtk::Widget
   end
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
-  def header_left
+  def header_left(context = nil)
     attr_list, text = header_left_markup
     color = Plugin.filtering(:message_header_left_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
     font = Plugin.filtering(:message_header_left_font, message, nil).last
-    layout = create_pango_layout
+    layout = context&.create_pango_layout || create_pango_layout
     layout.attributes = attr_list
-    # FIXME: gtk3, find alternative method
-    # context.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
+    context.set_source_rgb(*color.map{ |c| c.to_f / 65536 }) if context
     layout.font_description = font_description(font) if font
     layout.text = text
     layout end
@@ -414,10 +406,10 @@ class Gdk::MiraclePainter < Gtk::Widget
   end
 
   # ヘッダ（右）のための Pango::Layout のインスタンスを返す
-  def header_right
+  def header_right(context)
     hms = timestamp_label
     attr_list, text = Pango.parse_markup(hms)
-    layout = create_pango_layout
+    layout = context.create_pango_layout
     layout.attributes = attr_list
     font = Plugin.filtering(:message_header_right_font, message, nil).last
     layout.font_description = font_description(font) if font
@@ -434,19 +426,6 @@ class Gdk::MiraclePainter < Gtk::Widget
     end
   end
 
-  # pixmapを組み立てる
-  def gen_pixmap
-    pm = Gdk::Pixmap.new(nil, width, height, color)
-    render_to_context pm.create_cairo_context
-    pm
-  end
-
-  # pixbufを組み立てる
-  def gen_pixbuf
-    @pixmap = gen_pixmap
-    src_width, src_height = @pixmap.size
-    GdkPixbuf::Pixbuf.from_drawable(nil, @pixmap, 0, 0, src_width, src_height)
-  end
 
   # アイコンのpixbufを返す
   def main_icon
@@ -530,12 +509,10 @@ class Gdk::MiraclePainter < Gtk::Widget
       hr_color = Plugin.filtering(:message_header_right_font_color, message, nil).last
       hr_color = BLACK if not(hr_color and hr_color.is_a? Array and 3 == hr_color.size)
 
-      hl_rectangle = Gdk::Rectangle.new(pos.header_text.x, pos.header_text.y,
-                                        hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE)
-      hr_rectangle = Gdk::Rectangle.new(pos.header_text.x + pos.header_text.w - (hr_layout.size[0] / Pango::SCALE), pos.header_text.y,
-                                        hr_layout.size[0] / Pango::SCALE, hr_layout.size[1] / Pango::SCALE)
-      @hl_region = Gdk::Region.new(hl_rectangle)
-      @hr_region = Gdk::Region.new(hr_rectangle)
+      @hl_region = Cairo::Region.new([pos.header_text.x, pos.header_text.y,
+                                        hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE])
+      @hr_region = Cairo::Region.new([pos.header_text.x + pos.header_text.w - (hr_layout.size[0] / Pango::SCALE), pos.header_text.y,
+                                        hr_layout.size[0] / Pango::SCALE, hr_layout.size[1] / Pango::SCALE])
 
       context.save{
         context.translate(pos.header_text.w - (hr_layout.size[0] / Pango::SCALE), 0)
