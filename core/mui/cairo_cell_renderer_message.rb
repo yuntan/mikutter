@@ -177,13 +177,13 @@ module Gtk
               last_pressed.released end end
           last_pressed = nil end
         false }
-      ssc(:motion_notify_event, @tree){ |r, e, path, column, cell_x, cell_y|
+      ssc(:motion_notify_event, @tree){ |r, ev, path, column, cell_x, cell_y|
         record = @tree.get_record(path)
-        record.miracle_painter.point_moved(cell_x, cell_y) if record
+        record.miracle_painter.point_moved(ev, cell_x, cell_y) if record
         false }
-      ssc(:leave_notify_event, @tree){ |r, e, path, column, cell_x, cell_y|
+      ssc(:leave_notify_event, @tree){ |r, ev, path, column, cell_x, cell_y|
         record = @tree.get_record(path)
-        record.miracle_painter.point_leaved(cell_x, cell_y) if record
+        record.miracle_painter.point_leaved(ev, cell_x, cell_y) if record
         false }
     end
 

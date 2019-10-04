@@ -179,9 +179,9 @@ class Gdk::MiraclePainter < Gtk::Widget
       on_modify end end
 
   # 座標 ( _x_ , _y_ ) にマウスオーバーイベントを発生させる
-  def point_moved(x, y)
+  def point_moved(ev, x, y)
     point_moved_main_icon(x, y)
-    signal_emit(:motion_notify_event, x, y)
+    signal_emit(:motion_notify_event, ev)
     textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
 
     # change cursor shape
@@ -189,9 +189,9 @@ class Gdk::MiraclePainter < Gtk::Widget
   end
 
   # leaveイベントを発生させる
-  def point_leaved(x, y)
+  def point_leaved(ev, x, y)
     iob_main_leave
-    signal_emit(:leave_notify_event)
+    signal_emit(:leave_notify_event, ev)
     # textselector_release
 
     # restore cursor shape
