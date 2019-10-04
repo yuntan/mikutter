@@ -127,7 +127,9 @@ module Gtk
       else
         self.pixbuf = Skin['notfound.png'].pixbuf(width: 64, height: 64) end
     rescue Exception => err
-      error "#{err.class} by uri: #{uri} model: #{record ? record.message.inspect : nil}"
+      error "#{err.class}: \"#{err.message}\" by uri: #{uri} model: #{record&.message&.inspect}"
+      # for ruby >= 2.5
+      error "#{err.full_message}" if err.respond_to?(:full_message)
       raise if Mopt.debug
       error err
       self.pixbuf = Skin['notfound.png'].pixbuf(width: 64, height: 64) end
