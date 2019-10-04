@@ -92,7 +92,7 @@ class Gtk::CRUD < Gtk::TreeView
       else
         if(scheme[:label] and scheme[:kind])
           col = Gtk::TreeViewColumn.new(scheme[:label], get_render_by(scheme, index), scheme[:kind] => index)
-          col.resizable = scheme[:resizable]
+          col.resizable = scheme[:resizable] || false
           append_column(col) end
         index += 1 end
       index }

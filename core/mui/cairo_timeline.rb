@@ -55,7 +55,7 @@ class Gtk::TimeLine < Gtk::Box
       false }
 
     init_remover
-    @shell = Gtk::HBox.new.pack_start(@tl).closeup(scrollbar) end
+    @shell = (Gtk::Box.new :horizontal).pack_start(@tl).closeup(scrollbar) end
 
   # TLに含まれているMessageを順番に走査する。最新のものから順番に。
   def each(index=1)
@@ -195,7 +195,7 @@ class Gtk::TimeLine < Gtk::Box
       @exposing_miraclepainter = messages end end
 
   def postbox
-    @postbox ||= Gtk::VBox.new end
+    @postbox ||= Gtk::Box.new :vertical end
 
   Delayer.new{
     plugin = Plugin::create(:core)
