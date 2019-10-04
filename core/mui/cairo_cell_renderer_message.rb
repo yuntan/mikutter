@@ -190,12 +190,13 @@ module Gtk
     end
 
     def emit_leave_notify_from_event_motion(e, *args)
-      signal_emit("leave_notify_event",
-                  Gdk::EventCrossing.new(Gdk::Event::LEAVE_NOTIFY).tap{ |le|
-                    le.time = e.time
-                    le.x, le.y = e.x, e.y
-                    le.x_root, le.y_root = e.x_root, e.y_root
-                    le.focus = true
-                  }, *args) end
+      # signal_emit("leave_notify_event",
+      #             Gdk::EventCrossing.new(Gdk::Event::LEAVE_NOTIFY).tap{ |le|
+      #               le.time = e.time
+      #               le.x, le.y = e.x, e.y
+      #               le.x_root, le.y_root = e.x_root, e.y_root
+      #               le.focus = true
+      #             }, *args) end
+    end
   end
 end
