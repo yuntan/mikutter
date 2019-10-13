@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
+# TODO: gtk3 pluginに移動する
+
 require 'gtk3'
 require 'cairo'
 
-miquire :mui, 'coordinate_module'
+# TODO: gtk3 remove
+# miquire :mui, 'coordinate_module'
 miquire :mui, 'icon_over_button'
 miquire :mui, 'textselector'
 miquire :mui, 'sub_parts_helper'
@@ -14,42 +17,82 @@ miquire :mui, 'sub_parts_quote'
 miquire :mui, 'markup_generator'
 miquire :mui, 'special_edge'
 miquire :mui, 'photo_pixbuf'
-miquire :lib, 'uithreadonly'
 
-# 一つのMessageをPixbufにレンダリングするためのクラス。名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
-# 情報を設定してから、 Gdk::MiraclePainter#pixbuf で表示用の GdkPixbuf::Pixbuf のインスタンスを得ることができる。
+# Modelを表示するためのWidget。名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
 class Gdk::MiraclePainter < Gtk::Widget
+=begin rdoc
+  * カスタムwidgetの実装
+    https://developer.gnome.org/gtkmm-tutorial/stable/sec-custom-widgets.html.en
+  * height-for-widthの実装
+    https://developer.gnome.org/gtk3/stable/GtkWidget.html#GtkWidget.description
+=end
+
+  # TODO: gtk3 separete Rect class to another file
+  class Rect
+    extend Memoist
+    attr_reader :x, :y, :width, :height
+
+    def initialize(x, y, width, height)
+      @x, @y, @width, @height = x, y, width, height
+    end
+
+    def point_in?(x, y)
+      left <= x and x <= right and top <= y and y <= bottom
+    end
+
+    def bottom
+      y + height end
+
+    def right
+      x + width end
+
+    alias :left :x
+    alias :top :y
+  end
+
+  ICON_SIZE = [48, 48].freeze # [width, height]
+  MARGIN = 2 # margin for icon, etc
+  SPACING = 2 # spacing between mainparts and subparts
+  DEPTH = Gdk::Visual.system.depth # color depth
+  # TODO: gtk3 VERBOSE off
+  VERBOSE = true # for debug
+
   extend Gem::Deprecate
 
   type_register
-  signal_new(:modified, GLib::Signal::RUN_FIRST, nil, nil)
-  signal_new(:expose_event, GLib::Signal::RUN_FIRST, nil, nil)
 
-  include Gdk::Coordinate
+  signal_new(:clicked, GLib::Signal::RUN_FIRST, nil, nil, Gdk::EventButton)
+
+  # TODO: gtk3 remove
+  # signal_new(:modified, GLib::Signal::RUN_FIRST, nil, nil)
+  # signal_new(:expose_event, GLib::Signal::RUN_FIRST, nil, nil)
+
+  # TODO: gtk3 remove
+  # include Gdk::Coordinate
   include Gdk::IconOverButton
   include Gdk::TextSelector
   include Gdk::SubPartsHelper
   include Gdk::MarkupGenerator
-  include UiThreadOnly
 
-  EMPTY = Set.new.freeze
-  Event = Struct.new(:event, :message, :timeline, :miraclepainter)
+  # TODO: gtk3 remove
+  # EMPTY = Set.new.freeze
+  # Event = Struct.new(:event, :message, :timeline, :miraclepainter)
   WHITE = ([0xffff]*3).freeze
   BLACK = [0, 0, 0].freeze
 
-  attr_reader :message, :p_message, :tree, :selected
+  # TODO: gtk3 remove
+  # attr_reader :message, :p_message, :tree, :selected
+  attr_reader :model, :selected
+  alias message model
+  # TODO: gtk3 deprecate :message
+  deprecate :message, :model, 2019, 10
 
-  # :nodoc:
-  def to_message
-    message end
-  deprecate :to_message, :none, 2017, 5
+  # TODO: gtk3 adjust size
+  WIDTH_MIN = 100 # minimum width
+  WIDTH_NAT = 250 # natural width
 
-  # :nodoc:
-  memoize def score
-    Plugin[:gtk3].score_of(message)
-  end
-
-  # @@miracle_painters = Hash.new
+=begin
+  @@miracle_painters = Hash.new
 
   # _message_ を内部に持っているGdk::MiraclePainterの集合をSetで返す。
   # ログ数によってはかなり重い処理なので注意
@@ -80,66 +123,198 @@ class Gdk::MiraclePainter < Gtk::Widget
             miracle_painter.tree.queue_draw
             break end } end
       false } end
+=end
 
-  def initialize(message, *coodinate)
-    @p_message = message
-    @message = message
-    @selected = false
-    @pixbuf = nil
-    super()
-    coordinator(*coodinate)
-    ssc(:modified, &Gdk::MiraclePainter.mp_modifier)
-  end
-
-  signal_new(:click, GLib::Signal::RUN_FIRST, nil, nil,
-             Gdk::EventButton, Integer, Integer)
-
-  # TODO: gtk3, remove lines
-  # signal_new(:motion_notify_event, GLib::Signal::RUN_FIRST, nil, nil,
-  #            Integer, Integer)
-
-  # signal_new(:leave_notify_event, GLib::Signal::RUN_FIRST, nil, nil)
-
-  def signal_do_click(event, cell_x, cell_y)
-  end
-
-  def signal_do_motion_notify_event(cell_x, cell_y)
-  end
-
-  def signal_do_leave_notify_event()
-  end
-
-  # Gtk::TimeLine::InnerTLのインスタンスを設定する。今後、このインスタンスは _new_ に所属するものとして振舞う
-  def set_tree(new)
-    type_strict new => Gtk::TimeLine::InnerTL
-    @tree = new
-    self end
-
-  # TLに表示するための GdkPixbuf::Pixbuf のインスタンスを返す
-  def pixbuf
-    return @pixbuf if @pixbuf
-    if visible?
-      Cairo::ImageSurface.new(width, height) do |s|
-        ctx = Cairo::Context.new(s)
-        render_to_context(ctx)
-        @pixbuf = s.to_pixbuf
-      end
-      if(@pixbuf and defined?(@last_modify_height) and @last_modify_height != @pixbuf.height)
-        tree.get_column(0).queue_resize
-        @last_modify_height = @pixbuf.height end
-      @pixbuf
-    else
-      @last_modify_height = height
-      Skin['loading.png'].pixbuf(width: @last_modify_height, height: @last_modify_height)
+  class << self
+    def init
+      self.css_name = 'miraclepainter'
     end
   end
 
-  # MiraclePainterの座標x, y上でポインティングデバイスのボタン1が押されたことを通知する
-  def pressed(x, y)
-    textselector_press(*main_pos_to_index_forclick(x, y)[1..2])
+  def initialize(model)
+    super()
+
+    @model = model
+
+    # This widget create _Gdk::Window_ itself on _realize_.
+    self.has_window = true
+    self.redraw_on_allocate = true
   end
 
-  # MiraclePainterの座標x, y上でポインティングデバイスのボタン1が離されたことを通知する
+  # :nodoc:
+  memoize def score
+    Plugin[:gtk3].score_of(model)
+  end
+
+  # virtual function overrides
+  # TODO: gtk3 proc do; end.callで書き直す
+  if true # rubocop:disable Lint/LiteralAsCondition
+    # override virtual function Gtk::Widget#request_mode
+    def request_mode
+      notice 'MiraclePainter#request_mode' if VERBOSE
+
+      Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
+    end
+
+    # override virtual function Gtk::Widget#preferred_width
+    def preferred_width
+      notice 'MiraclePainter#preferred_width' if VERBOSE
+
+      [WIDTH_MIN, WIDTH_NAT]
+    end
+
+    # override virtual function Gtk::Widget#preferred_height_for_width
+    def preferred_height_for_width(width)
+      notice 'MiraclePainter#preferred_height_for_width(' \
+        "width = #{width})" if VERBOSE
+
+      @width = width
+      height = mainpart_height + SPACING + subparts_height
+      [height, height] # minimum, natural
+    end
+  end
+
+  # sockets
+  if true # rubocop:disable Lint/LiteralAsCondition
+=begin
+  signalの発行順序
+  size_allocate > realize > draw
+=end
+
+    # リサイズ時に呼ばれる
+    def signal_do_size_allocate(rect)
+      notice 'MiraclePainter*size_allocate(' \
+        "rect = {x: #{rect.x}, y: #{rect.y}, width: #{rect.width}, " \
+        "height: #{rect.height}})" if VERBOSE
+
+      @width = rect.width
+      # TODO gobject-introspectionでvirtual methodをoverride出来るようになったら
+      # 下の一行を消す
+      set_size_request(-1, mainpart_height + SPACING + subparts_height)
+      self.allocation = rect
+      window.move_resize rect.x, rect.y, rect.width, rect.height if window
+    end
+
+    def signal_do_realize
+      notice 'MiraclePainter*realize' if VERBOSE
+
+      w, h = allocation.width, allocation.height
+      attr = (Gdk::WindowAttr.new w, h, :input_output, :child).tap do |attr|
+        attr.x = allocation.x
+        attr.y = allocation.y
+        attr.visual = visual
+        # attr.event_mask = events | Gdk::EventMask::EXPOSURE_MASK
+        em = Gdk::EventMask
+        attr.event_mask = em::BUTTON_PRESS_MASK |
+                          em::BUTTON_RELEASE_MASK |
+                          em::POINTER_MOTION_MASK |
+                          em::LEAVE_NOTIFY_MASK |
+                          em::FOCUS_CHANGE_MASK
+      end
+
+      wat = Gdk::WindowAttributesType
+      mask = wat::X | wat::Y | wat::VISUAL
+      window = Gdk::Window.new parent_window, attr, mask
+
+      self.window = window
+      register_window window
+      self.realized = true
+    end
+
+    def signal_do_unrealize
+      notice 'MiraclePainter*unrealize' if VERBOSE
+
+      unregister_window window
+      window.destroy
+      self.realized = false
+    end
+
+    def signal_do_draw(ctx)
+      notice 'MiraclePainter*draw(ctx)' if VERBOSE
+
+      render_to_context ctx
+      true # stop propagation
+    end
+
+    def signal_do_clicked(ev)
+      notice 'MiraclePainter*clicked(ev)' if VERBOSE
+
+      x, y = ev.x, ev.y
+      case ev.button
+      when 1
+        iob_clicked(x, y)
+        if not textselector_range
+          index = main_pos_to_index(x, y)
+          if index
+            clicked_note = score.find{|note|
+              index -= note.description.size
+              index <= 0
+            }
+            Plugin.call(:open, clicked_note) if clickable?(clicked_note)
+          end
+        end
+      when 3
+        # @tree.get_ancestor(Gtk::Window).set_focus(@tree)
+        Plugin::GUI::Command.menu_pop
+      end
+    end
+
+    def signal_do_button_press_event(ev)
+      notice 'MiraclePainter*button_press_event(ev)' if VERBOSE
+
+      return false if ev.button != 1
+      textselector_press(*main_pos_to_index_forclick(ev.x, ev.y)[1..2])
+      true # stop propagation
+    end
+
+    def signal_do_button_release_event(ev)
+      notice 'MiraclePainter*button_release_event(ev)' if VERBOSE
+
+      return false if ev.button != 1
+      x, y = ev.x, ev.y
+      textselector_release(*main_pos_to_index_forclick(x, y)[1..2])
+      true # stop propagation
+    end
+
+    def signal_do_motion_notify_event(ev)
+      notice 'MiraclePainter*motion_notify_event(ev)' if VERBOSE
+
+      x, y = ev.x, ev.y
+      point_moved_main_icon(x, y)
+      textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
+
+      # change cursor shape
+      window.cursor = Gdk::Cursor.new(cursor_name_of(x, y))
+      true # stop propagation
+    end
+
+    def signal_do_leave_notify_event(_)
+      notice 'MiraclePainter*leave_notify_event(ev)' if VERBOSE
+
+      iob_main_leave
+      # textselector_release
+      # restore cursor shape
+      window.cursor = Gdk::Cursor.new('default')
+      true # stop propagation
+    end
+
+    def signal_do_focus_in_event(_)
+      notice 'MiraclePainter*focus_in_event(ev)' if VERBOSE
+
+      @selected = true
+      true # stop propagation
+    end
+
+    def signal_do_focus_out_event(_)
+      notice 'MiraclePainter*focus_out_event(ev)' if VERBOSE
+
+      @selected = false
+      textselector_unselect
+      true # stop propagation
+    end
+  end
+
+=begin
   def released(x=nil, y=nil)
     if not destroyed?
       if(x == y and not x)
@@ -198,30 +373,6 @@ class Gdk::MiraclePainter < Gtk::Widget
     set_cursor('default')
   end
 
-  # このMiraclePainterの(x , y)にマウスポインタがある時に表示すべきカーソルの名前を返す。
-  # ==== Args
-  # [x] x座標(Integer)
-  # [y] y座標(Integer)
-  # ==== Return
-  # [String] カーソルの名前
-  private def cursor_name_of(x, y)
-    index = main_pos_to_index(x, y)
-    if index # the cursor is placed on text
-      pointed_note = score.find{|note|
-        index -= note.description.size
-        index <= 0
-      }
-      if clickable?(pointed_note)
-        # the cursor is placed on link
-        'pointer'
-      else
-        'text'
-      end
-    else
-      'default'
-    end
-  end
-
   # _name_ に対応するマウスカーソルに変更する。
   # ==== Args
   # [name] カーソルの名前(String)
@@ -243,6 +394,7 @@ class Gdk::MiraclePainter < Gtk::Widget
   # MiraclePainterが選択解除されたことを通知する
   def unselect
     textselector_unselect end
+=end
 
   def iob_icon_pixbuf
     [ ["reply.png".freeze, message.user.verified? ? "verified.png" : "etc.png"],
@@ -283,24 +435,25 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   # つぶやきの左上座標から、クリックされた文字のインデックスを返す
   def main_pos_to_index(x, y)
-    x -= pos.main_text.x
-    y -= pos.main_text.y
+    x -= main_text_rect.x
+    y -= main_text_rect.y
     inside, byte, trailing = *main_message.xy_to_index(x * Pango::SCALE, y * Pango::SCALE)
     main_message.text.get_index_from_byte(byte) if inside end
 
   def main_pos_to_index_forclick(x, y)
-    x -= pos.main_text.x
-    y -= pos.main_text.y
+    x -= main_text_rect.x
+    y -= main_text_rect.y
     result = main_message.xy_to_index(x * Pango::SCALE, y * Pango::SCALE)
     result[1] = main_message.text.get_index_from_byte(result[1])
     return *result end
 
-  def signal_do_modified()
-  end
+  # def signal_do_modified()
+  # end
 
-  def signal_do_expose_event()
-  end
+  # def signal_do_expose_event()
+  # end
 
+=begin
   # 更新イベントを発生させる
   def on_modify(event=true)
     if not destroyed?
@@ -337,35 +490,64 @@ class Gdk::MiraclePainter < Gtk::Widget
     super
     freeze
   end
+=end
 
-  private
+private
+
+  def main_icon_rect
+    @main_icon_rect ||= Rect.new(MARGIN, MARGIN, *ICON_SIZE)
+  end
+
+  # 本文(model#description)
+  def main_text_rect
+    Rect.new(
+      ICON_SIZE[0] + 2 * MARGIN,
+      header_text_rect.bottom,
+      @width - ICON_SIZE[0] - 4 * MARGIN,
+      0
+    )
+  end
+
+  def header_text_rect
+    Rect.new(
+      ICON_SIZE[0] + 2 * MARGIN,
+      MARGIN,
+      @width - ICON_SIZE[0] - 4 * MARGIN,
+      header_left.size[1] / Pango::SCALE
+    )
+  end
 
   # 本文のための Pango::Layout のインスタンスを返す
   def main_message(context = nil)
-    layout = context&.create_pango_layout || create_pango_layout
+    # TODO: gtk3 use Object#tap
+    layout = (context || self).create_pango_layout
     font = Plugin.filtering(:message_font, message, nil).last
     layout.font_description = font_description(font) if font
-    layout.width = pos.main_text.width * Pango::SCALE
+    layout.width = main_text_rect.width * Pango::SCALE
     layout.attributes = textselector_attr_list(description_attr_list(emoji_height: emoji_height(layout.font_description)))
     layout.wrap = Pango::WrapMode::CHAR
     color = Plugin.filtering(:message_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
     context.set_source_rgb(*color.map{ |c| c.to_f / 65536 }) if context
     layout.text = plain_description
+
+    return layout until layout.context
     layout.context.set_shape_renderer do |c, shape, _|
-      photo = shape.data
-      if photo
-        width, height = shape.ink_rect.width/Pango::SCALE, shape.ink_rect.height/Pango::SCALE
-        pixbuf = photo.load_pixbuf(width: width, height: height){ on_modify }
-        x = layout.index_to_pos(shape.start_index).x / Pango::SCALE
-        y = layout.index_to_pos(shape.start_index).y / Pango::SCALE
-        c.translate(x, y)
-        c.set_source_pixbuf(pixbuf)
-        c.rectangle(0, 0, width, height)
-        c.fill
+      return layout until photo = shape.data
+      width, height = shape.ink_rect.width/Pango::SCALE, shape.ink_rect.height/Pango::SCALE
+      # pixbuf = photo.load_pixbuf(width: width, height: height){ on_modify }
+      pixbuf = photo.load_pixbuf(width: width, height: height) do
+        queue_draw
       end
+      x = layout.index_to_pos(shape.start_index).x / Pango::SCALE
+      y = layout.index_to_pos(shape.start_index).y / Pango::SCALE
+      c.translate(x, y)
+      c.set_source_pixbuf(pixbuf)
+      c.rectangle(0, 0, width, height)
+      c.fill
     end
-    layout end
+    layout
+  end
 
   memoize def font_description(font)
     Pango::FontDescription.new(font)
@@ -426,13 +608,12 @@ class Gdk::MiraclePainter < Gtk::Widget
     end
   end
 
-
   # アイコンのpixbufを返す
   def main_icon
-    @main_icon ||= message.user.icon.load_pixbuf(width: icon_width, height: icon_height){|pixbuf|
-      @main_icon = pixbuf
-      on_modify
-    }
+    w, h = ICON_SIZE
+    @main_icon ||= model.user.icon.load_pixbuf(width: w, height: h) do
+      queue_draw
+    end
   end
 
   # 背景色を返す
@@ -453,7 +634,7 @@ class Gdk::MiraclePainter < Gtk::Widget
   def render_background(context)
     context.save do
       context.set_source_rgb(*get_backgroundcolor)
-      context.rectangle(0,0,width,height)
+      context.rectangle(0, 0, allocation.width, allocation.height)
       context.fill
       if Gtk.konami
         context.save do
@@ -472,7 +653,7 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   def render_main_icon_square(context)
     context.save{
-      context.translate(pos.main_icon.x, pos.main_icon.y)
+      context.translate(main_icon_rect.x, main_icon_rect.y)
       context.set_source_pixbuf(main_icon)
       context.paint
     }
@@ -483,15 +664,19 @@ class Gdk::MiraclePainter < Gtk::Widget
   def render_main_icon_aspectframe(context)
     context.save do
       context.save do
-        context.translate(pos.main_icon.x, pos.main_icon.y + icon_height*13/14)
-        context.set_source_pixbuf(gb_foot.load_pixbuf(width: icon_width, height: icon_width*9/20){|_pb, _s| on_modify })
+        context.translate(main_icon_rect.x, main_icon_rect.y + icon_height*13/14)
+        # context.set_source_pixbuf(gb_foot.load_pixbuf(width: icon_width, height: icon_width*9/20){|_pb, _s| on_modify })
+        w, = ICON_SIZE
+        context.set_source_pixbuf(
+          gb_foot.load_pixbuf(width: w, height: 9 / 20 * w) { queue_draw }
+        )
         context.paint
       end
-      context.translate(pos.main_icon.x, pos.main_icon.y)
-      context.append_path(Cairo::SpecialEdge.path(icon_width, icon_height))
+      context.translate(main_icon_rect.x, main_icon_rect.y)
+      context.append_path(Cairo::SpecialEdge.path(*ICON_SIZE))
       context.set_source_rgb(0,0,0)
       context.stroke
-      context.append_path(Cairo::SpecialEdge.path(icon_width, icon_height))
+      context.append_path(Cairo::SpecialEdge.path(*ICON_SIZE))
       context.set_source_pixbuf(main_icon)
       context.fill
     end
@@ -501,7 +686,7 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   def render_main_text(context)
     context.save{
-      context.translate(pos.header_text.x, pos.header_text.y)
+      context.translate(header_text_rect.x, header_text_rect.y)
       context.set_source_rgb(0,0,0)
       hl_layout = header_left(context)
       context.show_pango_layout(hl_layout)
@@ -509,14 +694,14 @@ class Gdk::MiraclePainter < Gtk::Widget
       hr_color = Plugin.filtering(:message_header_right_font_color, message, nil).last
       hr_color = BLACK if not(hr_color and hr_color.is_a? Array and 3 == hr_color.size)
 
-      @hl_region = Cairo::Region.new([pos.header_text.x, pos.header_text.y,
+      @hl_region = Cairo::Region.new([header_text_rect.x, header_text_rect.y,
                                         hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE])
-      @hr_region = Cairo::Region.new([pos.header_text.x + pos.header_text.w - (hr_layout.size[0] / Pango::SCALE), pos.header_text.y,
+      @hr_region = Cairo::Region.new([header_text_rect.x + header_text_rect.width - (hr_layout.size[0] / Pango::SCALE), header_text_rect.y,
                                         hr_layout.size[0] / Pango::SCALE, hr_layout.size[1] / Pango::SCALE])
 
       context.save{
-        context.translate(pos.header_text.w - (hr_layout.size[0] / Pango::SCALE), 0)
-        if (hl_layout.size[0] / Pango::SCALE) > (pos.header_text.w - (hr_layout.size[0] / Pango::SCALE) - 20)
+        context.translate(header_text_rect.width - (hr_layout.size[0] / Pango::SCALE), 0)
+        if (hl_layout.size[0] / Pango::SCALE) > (header_text_rect.width - (hr_layout.size[0] / Pango::SCALE) - 20)
           r, g, b = get_backgroundcolor
           grad = Cairo::LinearPattern.new(-20, 0, hr_layout.size[0] / Pango::SCALE + 20, 0)
           grad.add_color_stop_rgba(0.0, r, g, b, 0.0)
@@ -528,8 +713,39 @@ class Gdk::MiraclePainter < Gtk::Widget
         context.set_source_rgb(*hr_color.map{ |c| c.to_f / 65536 })
         context.show_pango_layout(hr_layout) } }
     context.save{
-      context.translate(pos.main_text.x, pos.main_text.y)
+      context.translate(main_text_rect.x, main_text_rect.y)
       context.show_pango_layout(main_message(context)) } end
+
+  def mainpart_height
+    [
+      (main_message.size[1] + header_left.size[1]) / Pango::SCALE,
+      ICON_SIZE[1],
+    ].max + MARGIN
+  end
+
+  # このMiraclePainterの(x , y)にマウスポインタがある時に表示すべきカーソルの名前を返す。
+  # ==== Args
+  # [x] x座標(Integer)
+  # [y] y座標(Integer)
+  # ==== Return
+  # [String] カーソルの名前
+  def cursor_name_of(x, y)
+    index = main_pos_to_index(x, y)
+    if index # the cursor is placed on text
+      pointed_note = score.find{|note|
+        index -= note.description.size
+        index <= 0
+      }
+      if clickable?(pointed_note)
+        # the cursor is placed on link
+        'pointer'
+      else
+        'text'
+      end
+    else
+      'default'
+    end
+  end
 
   def gb_foot
     self.class.gb_foot
