@@ -19,13 +19,13 @@ module Gdk::IconOverButton
   end
 
   def get_icon_rectangle(ipx, ipy)
-    w, h = pos.main_icon.width / _schemer[:x_count], pos.main_icon.height / _schemer[:y_count]
+    w, h = main_icon_rect.width / _schemer[:x_count], main_icon_rect.height / _schemer[:y_count]
     Gdk::Rectangle.new(w * ipx, h * ipy, w, h)
   end
 
   def globalpos2iconpos(gx, gy)
-    lx, ly = gx - pos.main_icon.x, gy - pos.main_icon.y
-    w, h = pos.main_icon.width / _schemer[:x_count], pos.main_icon.height / _schemer[:y_count]
+    lx, ly = gx - main_icon_rect.x, gy - main_icon_rect.y
+    w, h = main_icon_rect.width / _schemer[:x_count], main_icon_rect.height / _schemer[:y_count]
     ipx, ipy = (lx / w).to_i, (ly / h).to_i
     if ipx >= 0 and ipx < _schemer[:x_count] and ipy >= 0 and ipy < _schemer[:y_count]
       [ipx, ipy]
@@ -35,7 +35,7 @@ module Gdk::IconOverButton
   # _context_ にicon over buttonを描画する。
   def render_icon_over_button(context)
     context.save{
-      context.translate(pos.main_icon.x, pos.main_icon.y)
+      context.translate(main_icon_rect.x, main_icon_rect.y)
       _schemer[:y_count].times{ |posy|
         _schemer[:x_count].times{ |posx|
           pos = [posx, posy]
@@ -58,10 +58,11 @@ module Gdk::IconOverButton
   # - _gy_MiraclePainter 全体から見たy座標
   def point_moved_main_icon(gx, gy)
     icon_position = globalpos2iconpos(gx, gy)
-    @tree.pointer_on_main_icon = !!icon_position
+    # TODO: gtk3 iobがホバーされていたらタイムラインをスクロールしない
+    # @tree.pointer_on_main_icon = !!icon_position
     if icon_position
       if current_icon_pos != icon_position
-        on_modify
+        queue_draw
         @current_icon_pos = icon_position end
     else
       iob_main_leave end end
@@ -70,7 +71,9 @@ module Gdk::IconOverButton
   def iob_main_leave
     if(current_icon_pos)
       @current_icon_pos = nil
-      on_modify end end
+      queue_draw
+    end
+  end
 
   # icon over buttonがクリックされたことを通知する
   # ==== Args

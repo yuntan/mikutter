@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# TODO: gtk3 pluginに移動する
-
 require 'gtk3'
 require 'cairo'
 
@@ -147,7 +145,6 @@ class Gdk::MiraclePainter < Gtk::Widget
   end
 
   # virtual function overrides
-  # TODO: gtk3 proc do; end.callで書き直す
   if true # rubocop:disable Lint/LiteralAsCondition
     # override virtual function Gtk::Widget#request_mode
     def request_mode
