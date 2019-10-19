@@ -14,7 +14,7 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
     @icon_width, @icon_height, @margin, @votes, @user_icon = 24, 24, 2, get_default_votes.to_a, Hash.new
     @avatar_rect = []
     @icon_ofst = 0
-    helper.ssc(:click){ |this, e, x, y|
+    helper.ssc(:clicked){ |this, e, x, y|
       ofsty = helper.mainpart_height
       helper.subparts.each{ |part|
         break if part == self
@@ -75,24 +75,16 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
   def add(new)
     if UserConfig[:"#{name}_by_anyone_show_timeline"]
       if not @votes.include?(new)
-        before_height = height
         @votes << new
-        if(before_height == height)
-          helper.on_modify
-        else
-          helper.reset_height end
+        helper.queue_draw
         self end end end
   alias << add
 
   def delete(user)
     if UserConfig[:"#{name}_by_anyone_show_timeline"]
       if not @votes.include?(user)
-        before_height = height
         @votes.delete(user)
-        if(before_height == height)
-          helper.on_modify
-        else
-          helper.reset_height end
+        helper.queue_draw
         self end end end
 
   def name
@@ -150,9 +142,11 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
   end
 
   def user_icon(user)
-    @user_icon[user[:id]] ||= user.icon.load_pixbuf(width: icon_width, height: icon_height){ |pixbuf|
-      @user_icon[user[:id]] = pixbuf
-      helper.on_modify } end
+    h = { width: icon_width, height: icon_height }
+    @user_icon[user[:id]] ||= user.icon.load_pixbuf(h) do
+      helper.queue_draw
+    end
+  end
 
   def pl_count(context = dummy_context)
     layout = context.create_pango_layout
