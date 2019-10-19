@@ -2,7 +2,7 @@
 
 require 'gtk3'
 require_relative '../utils'
-miquire :mui, 'crud'
+miquire :mui, 'crud', 'tree_view_pretty_scroll'
 
 =begin rdoc
   複数選択ウィジェットを作成する。
