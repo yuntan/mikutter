@@ -32,6 +32,7 @@ Plugin.create :gtk3 do
   # PostBoxとか複数のペインを持つための処理が入るので、Gtk::MikutterWindowクラスを新設してそれを使う
   on_window_created do |i_window|
     window = new_mikutter_window i_window, self
+    @parent = window
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
     # FIXME: 小さすぎる
@@ -490,7 +491,7 @@ Plugin.create :gtk3 do
     [widgetof(i_widget)] end
 
   on_gui_dialog do |plugin, title, default, proc, promise|
-    Plugin::Gtk::DialogWindow.open(plugin: plugin, title: title, default: default, promise: promise, &proc)
+    Plugin::Gtk::DialogWindow.open(plugin: plugin, title: title, parent: @parent, default: default, promise: promise, &proc)
   end
 
   # タブ _tab_ に _widget_ を入れる

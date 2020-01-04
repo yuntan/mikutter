@@ -2,7 +2,7 @@
 miquire :mui, 'form_dsl', 'form_dsl_select', 'form_dsl_multi_select'
 
 module Plugin::Gtk
-  class DialogWindow < Gtk::Dialog
+  module DialogWindow
     # ダイアログを開く。このメソッドを直接利用せずに、Pluginのdialog DSLを利用すること。
     # ==== Args
     # [title:] ダイアログのタイトルバーに表示する内容(String)
@@ -12,23 +12,42 @@ module Plugin::Gtk
     # [&proc] DSLブロック
     # ==== Return
     # 作成されたDialogのインスタンス
-    def self.open(title:, promise:, plugin:, default:, &proc)
-      window = new(plugin: plugin, title: title, promise: promise, default: default, &proc)
-      window.show_all
-      window
+    module_function def open(**kw, &p)
+      builder = Gtk::Builder.new
+      s = (Pathname(__FILE__).dirname / 'dialog.glade').to_s
+      builder.add_from_file s
+      dialog = builder.get_object :dialog
+      dialog.extend self
+      dialog.init builder: builder, **kw, &p
+      dialog.show_all
+      dialog
     end
 
-    def initialize(title:, promise:, plugin:, default:, &proc)
-      super(title)
+    def initialize(title:, parent:, promise:, plugin:, default:, &proc)
+      super(title: title, parent: parent, flags: :modal, buttons: [[Gtk::Stock::OK, :ok], [Gtk::Stock::CANCEL, :cancel]])
+      set_property :use_header_bar, 1
       @plugin = plugin
       @container = DialogContainer.new(plugin, default.to_h.dup, &proc)
       @container.error_observer = self
       @promise = promise
       set_size_request(640, 480)
-      set_window_position(Gtk::Window::POS_CENTER)
-      add_button(Gtk::Stock::OK, Gtk::Dialog::RESPONSE_OK)
-      add_button(Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL)
+      set_window_position :center
       vbox.pack_start(@container)
+      register_response_listener
+      run_container
+    end
+
+    def init(title:, parent:, promise:, plugin:, builder:, default:, &p)
+      @plugin = plugin
+      @promise = promise
+
+      self.title = title
+      self.transient_for = parent
+
+      @container = DialogContainer.new(plugin, default.to_h.dup, &proc)
+      @container.error_observer = self
+      child.add @container
+      @btn_ok = builder.get_object :btn_ok
       register_response_listener
       run_container
     end
@@ -68,7 +87,10 @@ module Plugin::Gtk
         when Gtk::Dialog::RESPONSE_OK
           case @container.state
           when DialogContainer::STATE_WAIT
-            run_container(Response::Ok.new(@container))
+            run_container(Response::Ok.new(@container)).next do
+              # 確認画面ではボタンのテキストを「追加」に変更
+              @btn_ok.label = 'gtk-add' if @container.state == DialogContainer::STATE_EXIT
+            end
           when DialogContainer::STATE_EXIT
             @promise.call(Response::Ok.new(@container)) if @promise
             @promise = nil
@@ -184,7 +206,7 @@ module Plugin::Gtk
     end
 
     def run(response=nil)
-      Delayer.new do
+      Deferred.new do
         case state
         when STATE_INIT
           @fiber = Fiber.new do
