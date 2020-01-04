@@ -12,6 +12,7 @@ miquire :mui,
 'pseudo_signal_handler', 'selectbox', 'userlist', 'webicon'
 
 require_relative 'widget/timeline'
+require_relative 'widget/dialog'
 
 require_relative 'mikutter_window'
 require_relative 'tab_container'
@@ -20,7 +21,6 @@ require_relative 'delayer'
 require_relative 'slug_dictionary'
 require_relative 'mainloop'
 require_relative 'konami_watcher'
-require_relative 'dialog_window'
 
 Plugin.create :gtk3 do
   @slug_dictionary = Plugin::Gtk::SlugDictionary.new # widget_type => {slug => Gtk}
