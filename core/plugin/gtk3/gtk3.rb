@@ -491,7 +491,12 @@ Plugin.create :gtk3 do
     [widgetof(i_widget)] end
 
   on_gui_dialog do |plugin, title, default, proc, promise|
-    Plugin::Gtk::DialogWindow.open(plugin: plugin, title: title, parent: @parent, default: default, promise: promise, &proc)
+    Plugin::Gtk::Dialog.open(plugin: plugin,
+                             title: title,
+                             default: default,
+                             promise: promise,
+                             parent: @parent,
+                             &proc)
   end
 
   # タブ _tab_ に _widget_ を入れる
