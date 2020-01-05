@@ -30,7 +30,7 @@ Plugin.create :gtk3 do
   # ウィンドウ作成。
   # PostBoxとか複数のペインを持つための処理が入るので、Gtk::MikutterWindowクラスを新設してそれを使う
   on_window_created do |i_window|
-    window = new_mikutter_window i_window, self
+    window = MikutterWindow.open i_window, self
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
     # FIXME: 小さすぎる

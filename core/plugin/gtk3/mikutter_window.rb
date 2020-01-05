@@ -5,21 +5,21 @@ require 'gtk3'
 require_relative 'toolbar_generator'
 require_relative 'world_shifter'
 
-# Gtk::Builderで生成したGtk::Windowに特異メソッドを生やす
-def new_mikutter_window(imaginally, plugin)
-  builder = Gtk::Builder.new
-  s = (Pathname(__FILE__).dirname / 'mikutter_window.glade').to_s
-  builder.add_from_file s
-  window = builder.get_object 'window'
-  window.extend MikutterWindow
-  window.init imaginally, plugin, builder
-  window
-end
-
 # PostBoxや複数のペインを持つWindow
 module MikutterWindow
 
   attr_reader :panes, :statusbar
+
+  module_function def open(imaginally, plugin)
+    # Gtk::Builderで生成したGtk::Windowに特異メソッドを生やす
+    builder = Gtk::Builder.new
+    s = (Pathname(__FILE__).dirname / 'mikutter_window.glade').to_s
+    builder.add_from_file s
+    window = builder.get_object 'window'
+    window.extend MikutterWindow
+    window.init imaginally, plugin, builder
+    window
+  end
 
   def init(imaginally, plugin, builder)
     type_strict plugin => Plugin
