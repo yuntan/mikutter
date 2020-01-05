@@ -43,22 +43,18 @@ Plugin.create :guide do
   end
 
   defsequence :first do
-    sequence.
-      say(_('おーい、こっちこっち。'))
+    sequence.say(_('おーい、こっちこっち。'))
+
     focus_observer = on_gui_child_activated do |i_pane, i_tab|
-      if i_tab == tab(:guide)
-        detach(focus_observer)
-        sequence.next{
-          Thread.new{ sleep 1 }
-        }.prompt(_('そうそれ！')).
-          prompt(_('こんにちは。私はみくったーちゃん！チュートリアルしか出番がないマスコットキャラクターだよ！')).
-          prompt(_("あなたはmikutterは初めて？"),
-                 _('初めて（チュートリアルを見る）') => :guide_start,
-                 _('完全に理解してる（チュートリアルをスキップ）') => :skip).
-          next { |selected|
-        jump_seq selected
-        }
-      end
+      i_tab != tab(:guide) and next
+      detach(focus_observer)
+      sequence.next { Thread.new { sleep 1 } }
+        .prompt(_('そうそれ！'))
+        .prompt(_('こんにちは。私はみくったーちゃん！チュートリアルしか出番がないマスコットキャラクターだよ！'))
+        .prompt(_("あなたはmikutterは初めて？"),
+                _('初めて（チュートリアルを見る）') => :guide_start,
+                _('完全に理解してる（チュートリアルをスキップ）') => :skip).
+        next &method(:jump_seq)
     end
   end
 
