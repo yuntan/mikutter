@@ -11,8 +11,9 @@ miquire :mui,
 'extension', 'intelligent_textview', 'keyconfig', 'listlist', 'message_picker', 'mtk', 'postbox',
 'pseudo_signal_handler', 'selectbox', 'timeline_utils', 'userlist', 'webicon'
 
+require_relative 'widget/tabcontainer'
+
 require_relative 'mikutter_window'
-require_relative 'tab_container'
 require_relative 'tab_toolbar'
 require_relative 'delayer'
 require_relative 'slug_dictionary'
