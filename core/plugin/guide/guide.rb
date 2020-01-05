@@ -45,8 +45,8 @@ Plugin.create :guide do
   defsequence :first do
     sequence.
       say(_('おーい、こっちこっち。'))
-    focus_observer = on_gui_child_activated do |parent, child, by_toolkit|
-      if parent == tab(:guide)
+    focus_observer = on_gui_child_activated do |i_pane, i_tab|
+      if i_tab == tab(:guide)
         detach(focus_observer)
         sequence.next{
           Thread.new{ sleep 1 }
