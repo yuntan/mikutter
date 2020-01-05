@@ -14,4 +14,9 @@ class Gtk::TabContainer < Gtk::Grid
   def to_sym
     i_tab.slug end
   alias slug to_sym
+
+  def inspect
+    "#<TabContainer(i_tab=#{i_tab})>"
+  end
+  alias to_s inspect
 end
