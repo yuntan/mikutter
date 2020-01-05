@@ -83,6 +83,7 @@ Plugin.create :gtk3 do
   # ペイン作成。
   # ペインはGtk::NoteBook
   on_pane_created do |i_pane|
+    # pane => Gtk::Notebook
     pane = create_pane(i_pane)
     pane.group_name = '0'
     pane.scrollable = true
@@ -104,9 +105,9 @@ Plugin.create :gtk3 do
         i_pane.reorder_child(i_tab, index) end
       Plugin.call(:after_gui_tab_reordered, i_tab)
       false }
-    pane.ssc(:switch_page){ |this, page, pagenum|
-      if pagenum == pane.page
-        i_pane.set_active_child(pane.get_nth_page(pagenum).i_tab, true) end }
+    pane.ssc :switch_page do |_, tab|
+      i_pane.set_active_child(tab.i_tab, true)
+    end
     pane.signal_connect(:page_added){ |this, tabcontainer, index|
       type_strict tabcontainer => ::Gtk::TabContainer
       Plugin.call(:rewind_window_order, i_pane.parent) if i_pane.parent
@@ -416,9 +417,7 @@ Plugin.create :gtk3 do
         i_tab = i_child
         pane = widgetof(i_pane)
         tab = widgetof(i_tab)
-        if pane and tab
-          pagenum = pane.get_tab_pos_by_tab(tab)
-          pane.page = pagenum if pagenum and pane.page != pagenum end
+        pane && tab and (pane.page = tab.position)
       elsif i_parent.is_a?(Plugin::GUI::Window)
         i_term = i_child.respond_to?(:active_chain) ? i_child.active_chain.last : i_child
         if i_term
