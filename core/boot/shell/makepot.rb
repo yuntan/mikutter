@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 # 全プラグインにpot作成
 
-miquire :boot, 'delayer'
-miquire :core, "miquire_plugin"
+require 'boot/delayer'
+require "miquire_plugin"
+
 require 'gettext/tools/task'
 require 'rake'
 
 mo_root = File.join(CHIConfig::CACHE, "uitranslator", "locale")
 
-Miquire::Plugin.loadpath << Environment::PLUGIN_PATH << File.join(File.dirname(__FILE__), "..", "..", "plugin") << File.join(Environment::CONFROOT, 'plugin')
+Miquire::Plugin.loadpath << Environment::PLUGIN_PATH << File.join(__dir__, "..", "..", "plugin") << File.join(Environment::CONFROOT, 'plugin')
 
 enable_plugins = ARGV[1,]
 failed_plugins = []

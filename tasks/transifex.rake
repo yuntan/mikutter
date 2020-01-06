@@ -4,14 +4,13 @@ namespace 'transifex' do
     require 'tmpdir'
     require 'httpclient'
     require 'json'
-    require 'pp'
     require 'set'
     require_relative '../core/boot/option'
     require_relative '../core/miquire'
     require_relative 'transifex'
 
-    miquire :boot, 'delayer'
-    miquire :core, "miquire_plugin"
+    require 'boot/delayer'
+    require 'miquire_plugin'
 
     project_name = ENV['TRANSIFEX_PROJECT_NAME']
 

@@ -1,0 +1,169 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the extract package.
+# 
+# Translators:
+# Jan-Peter Rühmann <jan-peter@ruehmann.name>, 2016,2018
+msgid ""
+msgstr ""
+"Project-Id-Version: mikutter\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-06 23:20+0900\n"
+"PO-Revision-Date: 2019-07-06 14:25+0000\n"
+"Last-Translator: Toshiaki Asai <toshi.alternative@gmail.com>\n"
+"Language-Team: German (http://www.transifex.com/lindwurm/mikutter/language/de/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../edit_window.rb:19 ../edit_window.rb:107
+msgid "%{name} - 抽出タブ - %{application_name}"
+msgstr "%{name} - gefiltertes Tab - %{application_name}"
+
+#: ../edit_window.rb:22
+msgid "データソース"
+msgstr "Datenquelle"
+
+#: ../edit_window.rb:23
+msgid "絞り込み条件"
+msgstr "Kriterium"
+
+#: ../edit_window.rb:24
+msgid "オプション"
+msgstr "Optionen"
+
+#: ../edit_window.rb:83 ../extract.rb:205 ../extract_tab_list.rb:18
+msgid "名前"
+msgstr "Name"
+
+#: ../edit_window.rb:84
+msgid "アイコン"
+msgstr "Icon"
+
+#: ../edit_window.rb:85
+msgid "通知"
+msgstr "Benachrichtigung"
+
+#: ../edit_window.rb:86
+msgid "サウンド"
+msgstr "Sound"
+
+#: ../edit_window.rb:89
+msgid "非圧縮音声ファイル (*.wav, *.aiff)"
+msgstr ""
+
+#: ../edit_window.rb:90
+msgid "FLAC (*.flac, *.fla)"
+msgstr ""
+
+#: ../edit_window.rb:91
+msgid "MPEG-1/2 Audio Layer-3 (*.mp3)"
+msgstr ""
+
+#: ../edit_window.rb:92
+msgid "Ogg (*.ogg)"
+msgstr ""
+
+#: ../edit_window.rb:93
+msgid "全てのファイル"
+msgstr ""
+
+#: ../edit_window.rb:95
+msgid "ポップアップ"
+msgstr "Popup"
+
+#: ../edit_window.rb:97
+msgid "並び順"
+msgstr "Sortieren nach"
+
+#: ../edit_window.rb:102
+msgid "閉じる"
+msgstr "Schliessen"
+
+#: ../extract.rb:71
+msgid "抽出タブ"
+msgstr "Gefilterter Tab"
+
+#: ../extract.rb:101
+msgid "抽出条件を編集"
+msgstr "Kriterien Bearbeiten"
+
+#: ../extract.rb:135
+msgid "＝"
+msgstr "Ist gleich"
+
+#: ../extract.rb:136
+msgid "≠"
+msgstr "Ist nicht gleich"
+
+#: ../extract.rb:137
+msgid "正規表現"
+msgstr "Regulärer Ausdruck"
+
+#: ../extract.rb:138
+msgid "含む"
+msgstr "enthält"
+
+#: ../extract.rb:140
+msgid "ユーザ名"
+msgstr "Name"
+
+#: ../extract.rb:142
+msgid "本文"
+msgstr "Text"
+
+#: ../extract.rb:144
+msgid "Twitterクライアント"
+msgstr "Twitter Client Name"
+
+#: ../extract.rb:146
+msgid "投稿時刻"
+msgstr "Erstellungszeitpunkt"
+
+#: ../extract.rb:150
+msgid "投稿時刻 (ふぁぼやリツイートでageる)"
+msgstr "Erstellungszeitpunkt (Fehler oder Retweet), Erstellungszeitpunkt (Alter in Fabo und Retweets)."
+
+#: ../extract.rb:187
+msgid "本当に抽出タブ「%{name}」を削除しますか？"
+msgstr "Bist du sicher den gefilterten Tab \"%{name}\" entfernen zu wollen?"
+
+#: ../extract.rb:199
+msgid "抽出タブを作成 - %{mikutter}"
+msgstr "Einen neuen gefilterten Tab erstellen - %{mikutter}"
+
+#: ../extract.rb:260
+msgid "受信したすべての投稿"
+msgstr "Alle Nachrichten empfangen"
+
+#: ../extract.rb:261
+msgid "ホームタイムライン(全てのアカウント)"
+msgstr "Home Timeline (alle Konten)"
+
+#: ../extract.rb:262
+msgid "自分宛ての投稿(全てのアカウント)"
+msgstr "Mentions (alle Konten)"
+
+#: ../extract.rb:269
+msgid "Home Timeline"
+msgstr "Home Timeline"
+
+#: ../extract.rb:270
+msgid "Mentions"
+msgstr "Mentions"
+
+#: ../extract.rb:304
+msgid "抽出タブ条件エラー"
+msgstr "Filterbedingungsfehler"
+
+#: ../extract.rb:306
+msgid ""
+"抽出タブ「%{tab_name}」で使われている条件が見つかりませんでした:\n"
+"%{error_string}"
+msgstr "Im gefiltertem Tab '%{tab_name}' benutztes Kriterium nicht gefunden\n%{error_string}"
+
+#: ../extract.rb:335
+msgid "抽出条件 `%{condition}' が見つかりませんでした"
+msgstr "Kriterium '%{condition}' nicht gefunden"

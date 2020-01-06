@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-require File.expand_path(File.dirname(__FILE__) + '/../helper')
+require_relative '../helper'
 
-Dir.chdir(File.expand_path(File.dirname(__FILE__) + '/../core'))
-$LOAD_PATH.push '.'
 require 'utils'
-
-miquire :lib, 'test_unit_extensions', 'weakstorage'
+require 'lib/test_unit_extensions'
+require 'lib/weakstorage'
 
 class TC_WeakStorage < Test::Unit::TestCase
   def setup

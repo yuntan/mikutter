@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-miquire :core, 'serialthread'
+require 'serialthread'
 
 =begin rdoc
 画像リソースを扱うModelのためのmix-in。
@@ -10,6 +10,7 @@ miquire :core, 'serialthread'
 =end
 module Diva::Model::PhotoMixin
   DownloadThread = SerialThreadGroup.new(max_threads: 4, deferred: Delayer::Deferred)
+  PARTIAL_READ_BYTESIZE = 1024 ** 2
 
   include Diva::Model::PhotoInterface
 
@@ -121,20 +122,18 @@ module Diva::Model::PhotoMixin
   def cache_read_routine
     raw = Plugin.filtering(:image_cache, uri.to_s, nil)[1]
     if raw.is_a?(String)
-      @buffer << raw.freeze
+      @buffer = raw.freeze
       atomic{ @partials.each{|c|c.(raw)} }
       true
     end
   end
 
   def download_routine
-    begin
-      open(uri.scheme == 'file' ? uri.path : uri.to_s) do |is|
-        download_mainloop(is)
-      end
-    rescue EOFError
-      true
+    open(uri.scheme == 'file' ? uri.path : uri.to_s) do |is|
+      download_mainloop(is)
     end
+  rescue EOFError
+    true
   end
 
   # _input_stream_ から、画像をダウンロードし、 _@buffer_ に格納する。
@@ -146,15 +145,19 @@ module Diva::Model::PhotoMixin
   def download_mainloop(input_stream)
     loop do
       Thread.pass
-      partial = input_stream.readpartial(1024**2).freeze
-      @buffer << partial
+      partial = input_stream.readpartial(PARTIAL_READ_BYTESIZE)
+      if @buffer
+        @buffer << partial
+      else
+        @buffer = +partial
+      end
       atomic{ @partials.each{|c|c.(partial)} }
     end
   end
 
   def initialize_download(&partial_callback)
     @state = :download
-    @buffer = String.new
+    @buffer = nil
     register_partial_callback(partial_callback)
     register_promise
   end

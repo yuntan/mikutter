@@ -1,0 +1,10 @@
+---
+slug: :skin
+depends:
+  mikutter: '3.5'
+  plugin: []
+version: '1.0'
+author: toshi_a
+name: Skin
+description: >-
+  mikutterにSkin機能を提供するプラグイン

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-miquire :core, 'userconfig'
+require 'userconfig'
 
 require 'gtk3'
 require 'monitor'
@@ -37,19 +37,15 @@ class GLib::Instantiatable
             end
           rescue Exception => err
             Gtk.exception = err
-            Gtk.main_quit
           end
         end
       else
         signal_connect(signal) do |*args|
-          begin
-            if not(destroyed?)
-              proc.call(*args)
-            end
-          rescue Exception => err
-            Gtk.exception = err
-            Gtk.main_quit
+          if !destroyed?
+            proc.call(*args)
           end
+        rescue Exception => err
+          Gtk.exception = err
         end
       end
     else
@@ -109,16 +105,19 @@ module Gtk
       @konami = true
     else
       Thread.new do
-        begin
-          tmpfile = File.join(Environment::TMPDIR, '600eur')
-          open('http://mikutter.hachune.net/img/konami.png', 'rb') { |konami|
-            open(tmpfile, 'wb'){ |cache| IO.copy_stream konami, cache } }
-          FileUtils.mkdir_p(File.dirname(KonamiCache))
-          FileUtils.mv(tmpfile, KonamiCache)
-          @konami_image = GdkPixbuf::Pixbuf.new(file: KonamiCache, width: 41, height: 52)
-          @konami = true
-        rescue => exception
-          error exception end end end end
+        tmpfile = File.join(Environment::TMPDIR, '600eur')
+        open('https://mikutter.hachune.net/img/konami.png', 'rb') do |konami|
+          open(tmpfile, 'wb'){ |cache| IO.copy_stream konami, cache }
+        end
+        FileUtils.mkdir_p(File.dirname(KonamiCache))
+        FileUtils.mv(tmpfile, KonamiCache)
+        @konami_image = GdkPixbuf::Pixbuf.new(file: KonamiCache, width: 41, height: 52)
+        @konami = true
+      rescue => exception
+        error exception
+      end
+    end
+  end
 
   def self.keyname(key)
     type_strict key => Array
@@ -285,10 +284,51 @@ class Gtk::Notebook
   # ==== Return
   # インデックス(見つからない場合nil)
   def get_tab_pos_by_tab(label)
-    n_pages.times { |page_num|
+    n_pages.times do |page_num|
       if(get_tab_label(get_nth_page(page_num)) == label)
-        return page_num end }
-    nil end
+        return page_num
+      end
+    end
+    nil
+  end
+
+  # ページをindex0から順に走査し、 _&block_ を呼び出す。
+  # ブロックを渡さない場合、Enumeratorを返す。
+  def each_pages(&block)
+    if block
+      n_pages.times.map(&method(:get_nth_page)).each(&block)
+    else
+      to_enum(:each_pages)
+    end
+  end
+end
+
+class Cairo::Context
+  class << self
+    memoize def dummy
+      Gdk::Pixmap.new(nil, 1, 1, Gdk::Visual.system.depth).create_cairo_context
+    end
+  end
+end
+
+class Pango::FontDescription
+  # 絵文字を描画する時の一辺の大きさを返す
+  # ==== Args
+  # [font] font description
+  # ==== Return
+  # [Integer] 高さ(px)
+  def forecast_font_size
+    Pango::FontDescription.forecast_font_size(self)
+  end
+
+  @forecast_font_description = Hash.new
+  def self.forecast_font_size(fd)
+    @forecast_font_description[fd.hash] ||= Cairo::Context.dummy.create_pango_layout.yield_self do |layout|
+      layout.font_description = fd
+      layout.text = '.'
+      layout.pixel_size[1]
+    end
+  end
 end
 
 class Gtk::ListStore
@@ -301,6 +341,20 @@ module Gtk
   class << self
     def openurl(url)
       Plugin.call(:open, url)
+    end
+  end
+end
+
+module Gdk
+  class << self
+    def scale(val)
+      case UserConfig[:ui_scale]
+      when :auto
+        resolution = Gdk::Visual.system.screen.resolution < 0 ? 96 : Gdk::Visual.system.screen.resolution
+        val * resolution / 96
+      else
+        val * UserConfig[:ui_scale]
+      end.to_i
     end
   end
 end

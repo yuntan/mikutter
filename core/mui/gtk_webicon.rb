@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 # ／(^o^)＼
 
-require_relative '../utils'
-miquire :core, 'environment', 'serialthread', 'skin'
-miquire :mui, 'web_image_loader'
+require 'environment'
+require 'mui/gtk_web_image_loader'
+require 'serialthread'
+require 'skin'
 
 require 'gtk3'
 require 'observer'
@@ -33,12 +34,12 @@ module Gtk
         photo = Enumerator.new{|y|
           Plugin.filtering(:photo_filter, url, y)
         }.first
-        super(load_model(photo || Skin['notfound.png'], rect))
+        super(load_model(photo || Skin[:notfound], rect))
       end
     end
 
     def load_model(photo, rect)
-      photo.load_pixbuf(width: rect.width, height: rect.height){|pb|
+      photo.load_pixbuf(width: Gdk.scale(rect.width), height: Gdk.scale(rect.height)){|pb|
         update_pixbuf(pb)
       }
     end
@@ -50,6 +51,5 @@ module Gtk
         self.notify_observers
       end
     end
-
   end
 end

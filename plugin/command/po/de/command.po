@@ -1,0 +1,152 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the command package.
+# 
+# Translators:
+# Jan-Peter Rühmann <jan-peter@ruehmann.name>, 2016,2018
+# Ogihara Kota <yukkuri.pro@gmail.com>, 2013
+msgid ""
+msgstr ""
+"Project-Id-Version: mikutter\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-06 23:20+0900\n"
+"PO-Revision-Date: 2019-07-06 14:25+0000\n"
+"Last-Translator: Toshiaki Asai <toshi.alternative@gmail.com>\n"
+"Language-Team: German (http://www.transifex.com/lindwurm/mikutter/language/de/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../command.rb:12
+msgid "コピー"
+msgstr "Kopieren"
+
+#: ../command.rb:20
+msgid "本文をコピー"
+msgstr "Text Kopieren"
+
+#: ../command.rb:28
+msgid "返信"
+msgstr "Antworten"
+
+#: ../command.rb:39
+msgid "全員に返信"
+msgstr "Allen antworten"
+
+#: ../command.rb:50
+msgid "引用"
+msgstr "Zitat"
+
+#: ../command.rb:61
+msgid "リツイート"
+msgstr "Retweeten"
+
+#: ../command.rb:68
+msgid "過去の栄光にすがりますか？"
+msgstr "kennst du \"Sugari\" in seiner ganzen Glorie?"
+
+#: ../command.rb:77
+msgid "リツイートをキャンセル"
+msgstr "Retweet abbrechen."
+
+#: ../command.rb:84
+msgid "リツイートをキャンセルしている途中でエラーが発生しました"
+msgstr "Beim Abbrechen eines Retweets ist ein Fehler aufgetreten."
+
+#: ../command.rb:88
+msgid "ふぁぼふぁぼする"
+msgstr "Favorisieren"
+
+#: ../command.rb:99
+msgid "ふぁぼふぁぼしている途中でエラーが発生しました"
+msgstr "Auf dem Weg von Fujibo ist ein Fehler aufgetreten."
+
+#: ../command.rb:103
+msgid "あんふぁぼ"
+msgstr "Das Favorisieren abbrechen"
+
+#: ../command.rb:110
+msgid "あんふぁぼしている途中でエラーが発生しました"
+msgstr "Beim Verzaubern ist ein Fehler aufgetreten."
+
+#: ../command.rb:114 ../command.rb:120
+msgid "削除"
+msgstr "löschen"
+
+#: ../command.rb:121
+msgid "失った信頼はもう戻ってきませんが、本当にこのつぶやきを削除しますか？"
+msgstr "Das löschen dieses Tweets bringt dir keine verlorene Glaubwürdigkeit zurück, willst du ihn dennoch löschen?"
+
+#: ../command.rb:132
+msgid "%{title}について"
+msgstr ""
+
+#: ../command.rb:134
+msgid "投稿者について"
+msgstr ""
+
+#: ../command.rb:144
+msgid "一つ上のメッセージを選択"
+msgstr "Vorherige Nachricht auswählen."
+
+#: ../command.rb:151
+msgid "一つ下のメッセージを選択"
+msgstr "Nächste Nachricht auswählen."
+
+#: ../command.rb:158
+msgid "投稿する"
+msgstr "Senden"
+
+#: ../command.rb:167
+msgid "ggrks"
+msgstr "RTFG"
+
+#: ../command.rb:175
+msgid "ブラウザで開く"
+msgstr "Im Browser öffnen."
+
+#: ../command.rb:182
+msgid "リンクを開く"
+msgstr "Link öffnen"
+
+#: ../command.rb:200
+msgid "リンクをコピー"
+msgstr "URL kopieren"
+
+#: ../command.rb:211
+msgid "新規ペインに移動"
+msgstr "In neues Paneel verschieben."
+
+#: ../command.rb:230
+msgid "タブを閉じる"
+msgstr "Tab schließen"
+
+#: ../command.rb:241
+msgid "次のタブを選択"
+msgstr "Nächsten Tab auswählen."
+
+#: ../command.rb:249
+msgid "前のタブを選択"
+msgstr "Vorherigen Tab auswählen."
+
+#: ../command.rb:257
+msgid "右のペインを選択"
+msgstr "Rechtes Paneel auswählen."
+
+#: ../command.rb:265
+msgid "左のペインを選択"
+msgstr "Linkes Paneel auswählen."
+
+#: ../command.rb:273
+msgid "投稿ボックスにフォーカス"
+msgstr "Eingabefeld fokussieren."
+
+#: ../command.rb:286
+msgid "タブにフォーカス"
+msgstr "Tab fokussieren."
+
+#: ../command.rb:294
+msgid "タイムラインの一番上にジャーンプ！"
+msgstr "An den Anfang der timeline springen."

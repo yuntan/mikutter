@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # -*- coding: utf-8 -*-
 #
 # Config
@@ -8,15 +9,10 @@
 
 module CHIConfig
   # このアプリケーションの名前。
-  NAME = "mikutter"
+  NAME = 'mikutter'
 
   # 名前の略称
-  ACRO = "mikutter"
-
-  # 下の２行は馬鹿にしか見えない
-  TWITTER_CONSUMER_KEY = "AmDS1hCCXWstbss5624kVw"
-  TWITTER_CONSUMER_SECRET = "KOPOooopg9Scu7gJUBHBWjwkXz9xgPJxnhnhO55VQ"
-  TWITTER_AUTHENTICATE_REVISION = 1
+  ACRO = 'mikutter'
 
   # pidファイル
   PIDFILE = "#{File::SEPARATOR}tmp#{File::SEPARATOR}#{ACRO}.pid"
@@ -37,7 +33,7 @@ module CHIConfig
   CACHE = File.join(CONFROOT, 'cache')
 
   # プラグインディレクトリ
-  PLUGIN_PATH = File.expand_path(File.join(File.dirname(__FILE__), "plugin"))
+  PLUGIN_PATH = File.expand_path(File.join(__dir__, '..', 'plugin'))
 
   # AutoTag有効？
   AutoTag = false
@@ -46,6 +42,6 @@ module CHIConfig
   NeverRetrieveOverlappedMumble = false
 
   # このソフトのバージョン。
-  VERSION = [3,7,4,9999]
+  VERSION = [4,0,2,9999]
 
 end

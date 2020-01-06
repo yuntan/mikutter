@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-miquire :lib, 'uithreadonly'
-miquire :core, 'userconfig'
+
+require 'userconfig'
 
 require 'gtk3'
 require 'cairo'
 
 module Gdk::SubPartsHelper
+  extend Gem::Deprecate
 
   # 今サポートされている全てのSubPartsを配列で返す
   # ==== Return
@@ -32,6 +33,7 @@ module Gdk::SubPartsHelper
 end
 
 class Gdk::SubParts
+  extend Gem::Deprecate
   include UiThreadOnly
 
   attr_reader :helper
@@ -60,5 +62,4 @@ class Gdk::SubParts
 
   def height
     0 end
-
 end

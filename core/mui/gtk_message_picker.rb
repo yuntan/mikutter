@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 require 'gtk3'
-require_relative '../utils'
-miquire :core, 'skin'
-miquire :mui, 'mtk'
-miquire :mui, 'extension'
-miquire :mui, 'webicon'
-miquire :miku, 'miku'
+
+require 'miku/miku'
+require 'mui/gtk_extension'
+require 'mui/gtk_mtk'
+require 'mui/gtk_webicon'
+require 'skin'
 
 class Gtk::MessagePicker < Gtk::Frame
   DEFAULT_CONDITION = [:==, :user, ''.freeze].freeze
@@ -58,7 +58,7 @@ class Gtk::MessagePicker < Gtk::Frame
 
   def add_condition(expr = DEFAULT_CONDITION)
     pack = Gtk::Grid.new
-    close = Gtk::Button.new.add(Gtk::WebIcon.new(Skin['close.png'], 16, 16)).set_relief(Gtk::RELIEF_NONE)
+    close = Gtk::Button.new.add(Gtk::WebIcon.new(Skin[:close], 16, 16)).set_relief(Gtk::RELIEF_NONE)
     close.valign = :start
     close.signal_connect(:clicked){
       @container.remove(pack)
@@ -142,7 +142,7 @@ class Gtk::MessagePicker < Gtk::Frame
                                      unless new === nil
                                        @subject = new.to_sym
                                        call end
-                                     sensitivity = extract_condition[@subject][:operator] && 0 != extract_condition[@subject][:args]
+                                     sensitivity = extract_condition.dig(@subject, :operator) && 0 != extract_condition.dig(@subject, :args)
                                      w_argument.set_sensitive(sensitivity)
                                      w_operator.set_sensitive(sensitivity)
                                      @subject.to_s },

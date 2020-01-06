@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-miquire :mui, 'timeline', 'tree_view_pretty_scroll', 'dark_matter_prification'
-miquire :lib, 'uithreadonly'
+require 'mui/cairo_timeline'
+require 'mui/gtk_dark_matter_prification'
+require 'mui/gtk_tree_view_pretty_scroll'
+
 require 'gtk3'
 
 class Gtk::TimeLine::InnerTL < Gtk::CRUD
@@ -110,10 +112,6 @@ class Gtk::TimeLine::InnerTL < Gtk::CRUD
       options[:delegate_other] = postbox_delegation_generator(i_timeline)
       options[:postboxstorage] = postbox end
     create_postbox(options) end
-
-  def set_cursor_to_display_top
-    iter = model.iter_first
-    set_cursor(iter.path, get_column(0), false) if iter end
 
   def get_active_messages
     get_active_iterators.map{ |iter| iter[1] } end

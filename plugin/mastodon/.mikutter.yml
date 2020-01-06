@@ -1,0 +1,22 @@
+---
+slug: :mastodon
+depends:
+  mikutter: '3.9.0'
+  plugin:
+    - command
+    - extract
+    - gtk
+    - gui
+    - modelviewer
+    - openimg
+    - photo
+    - score
+    - settings
+    - spell
+    - uitranslator
+    - world
+version: '1.0'
+author: cobodo
+name: Mastodon
+description: mikutterでMastodonへ接続するworldプラグインです。
+

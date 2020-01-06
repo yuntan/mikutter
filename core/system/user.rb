@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-miquire :core, 'skin'
-miquire :lib, 'diva_hacks'
+require 'skin'
+require 'lib/diva_hacks'
 
 class Mikutter::System::User < Diva::Model
   extend Memoist
@@ -16,7 +16,7 @@ class Mikutter::System::User < Diva::Model
   memoize def self.system
     Mikutter::System::User.new(idname: 'mikutter_bot',
                                name: Environment::NAME,
-                               icon: Skin['icon.png'])
+                               icon: Skin[:icon])
   end
 
   def system?

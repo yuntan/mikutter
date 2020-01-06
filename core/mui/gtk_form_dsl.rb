@@ -215,9 +215,9 @@ module Gtk::FormDSL
   #   _:license_ :: ライセンス
   #   _:website_ :: Webページ
   #   _:logo_ :: ロゴ画像。 フルパス(String)か、Photo Modelか、GdkPixbuf::Pixbufを指定する
-  #   _:authors_ :: 作者の名前。通常Twitter screen name（Array）
-  #   _:artists_ :: デザイナとかの名前。通常Twitter screen name（Array）
-  #   _:documenters_ :: ドキュメントかいた人とかの名前。通常Twitter screen name（Array）
+  #   _:authors_ :: 作者の名前。通常MastodonのAcct（Array）
+  #   _:artists_ :: デザイナとかの名前。通常MastodonのAcct（Array）
+  #   _:documenters_ :: ドキュメントかいた人とかの名前。通常MastodonのAcct（Array）
   def about(label, options={})
     name_mapper = Hash.new{|h,k| k }
     name_mapper[:name] = :program_name
@@ -479,31 +479,27 @@ module Gtk::FormDSL
 
       shortcuts.select { |dir|
         !dialog.shortcut_folders.include?(dir)
-      }.each { |dir|
-        begin
-          dialog.add_shortcut_folder(dir)
-        rescue => e
-          puts e
-          puts e.backtrace
-        end
-      }
+      }.each do |dir|
+        dialog.add_shortcut_folder(dir)
+      rescue => e
+        puts e
+        puts e.backtrace
+      end
 
       if use_preview
         preview = Gtk::Image.new
         dialog.preview_widget = preview
-        dialog.signal_connect("update-preview") do
-          begin
-            path = dialog.preview_filename
-            pixbuf = Gdk::Pixbuf.new(file: path, width: 256, height: 256)
-            preview.set_pixbuf(pixbuf)
-            dialog.set_preview_widget_active(true)
-          rescue => e
-            dialog.set_preview_widget_active(false)
-          end
+        dialog.ssc(:update_preview) do
+          path = dialog.preview_filename
+          pixbuf = Gdk::Pixbuf.new(file: path, width: 256, height: 256)
+          preview.set_pixbuf(pixbuf)
+          dialog.set_preview_widget_active(true)
+        rescue => e
+          dialog.set_preview_widget_active(false)
         end
       end
 
-      dialog.ssc_atonce(:response, &gen_fs_dialog_response_callback(config, &result_callback))
+      dialog.ssc_atonce(:response, self, &gen_fs_dialog_response_callback(config, &result_callback))
       dialog.show_all
       false
     end
@@ -528,4 +524,5 @@ module Gtk::FormDSL
   end
 end
 
-miquire :mui, 'form_dsl_select', 'form_dsl_multi_select'
+require 'mui/gtk_form_dsl_select'
+require 'mui/gtk_form_dsl_multi_select'

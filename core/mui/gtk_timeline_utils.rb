@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-miquire :lib, 'weakstorage'
-miquire :lib, 'uithreadonly'
 
 require 'gtk3'
 

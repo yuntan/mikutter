@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 require 'gtk3'
-miquire :lib, 'diva_hacks'
+require 'lib/diva_hacks'
 
 module Pango
   ESCAPE_RULE = {'&': '&amp;'.freeze ,'>': '&gt;'.freeze, '<': '&lt;'.freeze}.freeze
@@ -16,11 +16,13 @@ module Pango
 
     # パースエラーが発生した場合、その文字列をerrorで印字する。
     def parse_markup(str)
-      begin
-        old_parse_markup(str)
-      rescue GLib::Error => e
-        error str
-        raise e end end end end
+      old_parse_markup(str)
+    rescue GLib::Error => e
+      error str
+      raise e
+    end
+  end
+end
 
 =begin rdoc
   本文の、描画するためのテキストを生成するモジュール。

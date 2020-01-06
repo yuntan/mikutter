@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-require 'gtk3'
-miquire :mui, 'extension', 'inneruserlist'
+require 'mui/gtk_extension'
+require 'mui/gtk_inneruserlist'
 
+require 'gtk3'
 require 'set'
 
 class Gtk::UserList < Gtk::EventBox

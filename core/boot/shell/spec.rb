@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # specファイル自動生成
 
+require "boot/delayer"
+require "userconfig"
+
 require "fileutils"
 require 'ripper'
-miquire :boot, "delayer"
-miquire :core, "userconfig"
 
 # イカサマ依存関係自動解決クラス。
 # あまり頼りにしないでくれ、Rubyのパース面倒なんだよ
@@ -99,7 +100,7 @@ def spec_generate(dir)
       puts "[#{index}] #{filename}"
     }
     print "input number or slug [q:quit, s:skip]> "
-    number = STDIN.gets.chomp
+    number = STDIN.gets(chomp: true)
     case number
     when /q/i
       abort
@@ -115,10 +116,12 @@ def spec_generate(dir)
 
   if not spec.has_key?("name")
     print "#{slug}: name> "
-    spec["name"] = STDIN.gets.chomp end
+    spec["name"] = STDIN.gets(chomp: true)
+  end
   if not spec.has_key?("description")
     print "#{slug}: description> "
-    spec["description"] = STDIN.gets.chomp end
+    spec["description"] = STDIN.gets(chomp: true)
+  end
   spec["depends"] = {"version" => "1.0", "plugin" => []} if not spec.has_key?("depends")
   spec["depends"]["plugin"] = [] if not spec["depends"].has_key?("plugin")
   depend = Depend.new(source).set_spec(spec)

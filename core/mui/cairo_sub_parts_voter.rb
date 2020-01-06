@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-miquire :mui, 'sub_parts_helper'
+require 'mui/cairo_sub_parts_helper'
 
 require 'gtk3'
 require 'cairo'
 
 class ::Gdk::SubPartsVoter < Gdk::SubParts
 
-  attr_reader :votes, :icon_width, :icon_height, :margin
+  attr_reader :votes
 
   def initialize(*args)
     super
@@ -51,6 +51,18 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
       false }
   end
 
+  def icon_width
+    helper.scale(@icon_width)
+  end
+
+  def icon_height
+    helper.scale(@icon_height)
+  end
+
+  def margin
+    helper.scale(@margin)
+  end
+
   def get_user_by_point(x)
     if(x >= @icon_ofst)
       node = @avatar_rect.each_with_index.to_a.bsearch{|_| _[0].last > x }
@@ -73,19 +85,21 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
       icon_height end end
 
   def add(new)
-    if UserConfig[:"#{name}_by_anyone_show_timeline"]
-      if not @votes.include?(new)
-        @votes << new
-        helper.queue_draw
-        self end end end
+    if not @votes.include?(new)
+      @votes << new
+      helper.queue_draw
+      self
+    end
+  end
   alias << add
 
   def delete(user)
-    if UserConfig[:"#{name}_by_anyone_show_timeline"]
-      if not @votes.include?(user)
-        @votes.delete(user)
-        helper.queue_draw
-        self end end end
+    if not @votes.include?(user)
+      @votes.delete(user)
+      helper.queue_draw
+      self
+    end
+  end
 
   def name
     raise end
@@ -93,7 +107,7 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
   # このSubPartsのアイコンのPixbufを返す。
   # title_icon_model メソッドをオーバライドしない場合、こちらを必ずオーバライドしなければならない
   def title_icon
-    title_icon_model.pixbuf(width: @icon_width, height: @icon_height)
+    title_icon_model.pixbuf(width: icon_width, height: icon_height)
   end
 
   # このSubPartsのアイコンをあらわすModelを返す。
@@ -148,10 +162,10 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
     end
   end
 
-  def pl_count(context = dummy_context)
+  def pl_count(context = Cairo::Context.dummy)
     layout = context.create_pango_layout
     layout.wrap = Pango::WrapMode::CHAR
-    layout.font_description = Pango::FontDescription.new(UserConfig[:mumble_basic_font])
+    layout.font_description = helper.font_description(UserConfig[:mumble_basic_font])
     layout.text = "#{get_vote_count}"
     layout
   end

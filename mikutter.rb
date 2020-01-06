@@ -3,8 +3,8 @@
 exec ruby -x "$0" "$@"
 #!ruby
 =begin rdoc
-= mikutter - the moest twitter client
-Copyright (C) 2009-2018 Toshiaki Asai
+= mikutter - simple, powerful and moeful Mastodon client
+Copyright (C) 2009-2020 Toshiaki Asai
 
 This software is released under the MIT License.
 
@@ -33,17 +33,29 @@ require 'webrick'
 require 'thread'
 require 'fileutils'
 
+require_relative 'core/miquire'
+
+require 'lib/diva_hacks'
+require 'lib/lazy'
+require 'lib/reserver'
+require 'lib/timelimitedqueue'
+require 'lib/uithreadonly'
+require 'lib/weakstorage'
+
 require_relative 'core/utils'
 
-miquire :boot, 'check_config_permission', 'mainloop', 'delayer'
-miquire :core, 'environment'
-Dir.chdir(Environment::CONFROOT)
-miquire :lib, 'diva_hacks'
-miquire :system, 'system'
-miquire :boot, 'load_plugin'
+require 'boot/check_config_permission'
+require 'boot/mainloop'
+require 'boot/delayer'
+require 'environment'
 
-notice "fire boot event"
-Plugin.call(:boot, Post.primary_service)
+Dir.chdir(Environment::CONFROOT)
+
+require 'system/system'
+
+require 'boot/load_plugin'
+
+Plugin.call(:boot, nil)
 
 # イベントの待受を開始する。
 # _profile_ がtrueなら、プロファイリングした結果を一時ディレクトリに保存する

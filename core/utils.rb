@@ -18,18 +18,18 @@ HYDE = 156
 # Rubyのバージョンを配列で。あると便利。
 RUBY_VERSION_ARRAY = RUBY_VERSION.split('.').map{ |i| i.to_i }.freeze
 
-require File.join(File::dirname(__FILE__), 'miquire')
+require File.join(__dir__, 'miquire')
 
-[File::dirname(__FILE__),
- File.join(File::dirname(__FILE__), 'lib'),
- File.join(File::dirname(__FILE__), 'miku')].each{|path|
+[__dir__,
+ File.join(__dir__, 'lib'),
+ File.join(__dir__, 'miku')].each{|path|
   $LOAD_PATH.push(File.expand_path(File.join(Dir.pwd, path)))
 }
 
-miquire :lib, 'lazy'
+require_relative 'miquire'
 
 # すべてのクラスにメモ化機能を
-miquire :lib, 'memoist'
+require 'memoist'
 
 # Environment::CONFROOT内のファイル名を得る。
 #   confroot(*path)
@@ -39,7 +39,7 @@ miquire :lib, 'memoist'
 def confroot(*path)
   File::expand_path(File.join(Environment::CONFROOT, *path))
 end
-miquire :core, 'environment'
+require 'environment'
 
 # _num_ 番目の引数をそのまま返す関数を返す
 def ret_nth(num=0)
@@ -87,12 +87,12 @@ end
 # 存在するかわからないrubyファイル _file_ を読み込む。
 # ただし、_file_ が存在しない場合は例外を投げずにfalseを返す。
 def require_if_exist(file)
-  begin
-    require file
-    true
-  rescue LoadError
-    warn "require-if-exist: file not found: #{file}"
-    false end end
+  require file
+  true
+rescue LoadError
+  warn "require-if-exist: file not found: #{file}"
+  false
+end
 
 # _insertion_ を、 _src_ の挿入するべき場所のインデックスを返す。
 # _order_ は順番を表す配列で、 _src_ 内のオブジェクトの前後関係を表す。
@@ -110,9 +110,17 @@ def notice(msg)
   log "notice", msg if Mopt.error_level >= 3
 end
 
+alias __mikutter_original_warn warn
 # 警告メッセージを表示する。
-def warn(msg)
-  log "warning", msg if Mopt.error_level >= 2
+def warn(*msg, uplevel: nil)
+  case
+  when uplevel
+    __mikutter_original_warn(*msg, uplevel: uplevel)
+  when Mopt.error_level >= 2
+    msg.each do |m|
+      log "warning", m
+    end
+  end
 end
 
 # エラーメッセージを表示する。
@@ -192,11 +200,13 @@ def tcor(*types)
 # type_checkと同じだが、チェックをパスしなかった場合にabortする
 # type_checkの戻り値を返す
 def type_strict(args, &proc)
-  result = type_check(args, &proc)
-  if not result
-    into_debug_mode(binding)
-    raise ArgumentError.new end
-  result end
+  args.each.with_index do |(value, constraint), index|
+    unless type_check(value => constraint, &proc)
+      raise TypeStrictError.new("The ##{index} value does not matched constraint `#{constraint}'", value: value)
+    end
+  end
+  true
+end
 
 # blockの評価結果がチェックをパスしなかった場合にabortする
 def result_strict(must, &block)
@@ -243,7 +253,7 @@ def log(prefix, object)
   end
 end
 
-FOLLOW_DIR = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+FOLLOW_DIR = File.expand_path(File.join(__dir__, '..'))
 def __write_stderr (msg)
   $stderr.write(msg.gsub(FOLLOW_DIR, '{MIKUTTER_DIR}')+"\n")
 end
@@ -316,17 +326,21 @@ end
 class Object
   # freezeできるならtrueを返す
   def freezable?
-    true end
+    true
+  end
 
   # freezeできる場合はfreezeする。selfを返す
   def freeze_ifn
     freeze if freezable?
-    self end
+    self
+  end
 
   # freezeされていない同じ内容のオブジェクトを作って返す。
   # メルト　溶けてしまいそう　（実装が）dupだなんて　絶対に　言えない
   def melt
-    if frozen? then dup else self end end end
+    if frozen? then dup else self end
+  end
+end
 
 #
 # Numeric
@@ -445,5 +459,17 @@ class Regexp
 
   def self.json_create(o)
     new(o['data'])
+  end
+end
+
+# type_strictが発生させる例外。
+# 値が制約に合致しない場合に投げられる。
+# valueメソッドを呼ぶと、原因となった値を得ることができる。
+class TypeStrictError < TypeError
+  attr_reader :value
+
+  def initialize(*args, value:)
+    super(*args)
+    @value = value
   end
 end

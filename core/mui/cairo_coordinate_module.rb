@@ -9,6 +9,7 @@ module Gdk::Coordinate
   CoordinateStruct = Struct.new(:main_icon, :main_text, :header_text, :reply)
 
   DEPTH = Gdk::Visual.system.depth
+  SCALE = Gdk::Visual.system.screen.resolution / 100
 
   class Region
     extend Memoist
@@ -77,11 +78,15 @@ module Gdk::Coordinate
     new
   end
 
+  def scale(val)
+    Gdk.scale(val)
+  end
+
   protected
 
   # 寸法の初期化
   def coordinator(width)
-    @width, @color, @icon_width, @icon_height, @icon_margin = [width, 1].max, DEPTH, 48, 48, 2
+    @width, @color, @icon_width, @icon_height, @icon_margin = [width, 1].max, DEPTH, scale(48), scale(48), scale(2)
   end
 
   # 座標系を構造体にまとめて返す

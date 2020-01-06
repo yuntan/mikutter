@@ -4,17 +4,17 @@ require 'gtk3'
 require 'cairo'
 
 # TODO: gtk3 remove
-# miquire :mui, 'coordinate_module'
-miquire :mui, 'icon_over_button'
-miquire :mui, 'textselector'
-miquire :mui, 'sub_parts_helper'
-miquire :mui, 'replyviewer'
-miquire :mui, 'sub_parts_favorite'
-miquire :mui, 'sub_parts_retweet'
-miquire :mui, 'sub_parts_quote'
-miquire :mui, 'markup_generator'
-miquire :mui, 'special_edge'
-miquire :mui, 'photo_pixbuf'
+# require 'mui/cairo_coordinate_module'
+require 'mui/cairo_icon_over_button'
+require 'mui/cairo_textselector'
+require 'mui/cairo_sub_parts_helper'
+require 'mui/cairo_replyviewer'
+require 'mui/cairo_sub_parts_favorite'
+require 'mui/cairo_sub_parts_share'
+require 'mui/cairo_sub_parts_quote'
+require 'mui/cairo_markup_generator'
+require 'mui/cairo_special_edge'
+require 'mui/gtk_photo_pixbuf'
 
 # Modelを表示するためのWidget。名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
 class Gdk::MiraclePainter < Gtk::Widget
@@ -77,6 +77,8 @@ class Gdk::MiraclePainter < Gtk::Widget
   # Event = Struct.new(:event, :message, :timeline, :miraclepainter)
   WHITE = ([0xffff]*3).freeze
   BLACK = [0, 0, 0].freeze
+  NUMERONYM_MATCHER = /[a-zA-Z]{4,}/.freeze
+  NUMERONYM_CONVERTER = ->(r) { "#{r[0]}#{r.size-2}#{r[-1]}" }
 
   # TODO: gtk3 remove
   # attr_reader :message, :p_message, :tree, :selected
@@ -454,7 +456,6 @@ class Gdk::MiraclePainter < Gtk::Widget
   # 更新イベントを発生させる
   def on_modify(event=true)
     if not destroyed?
-      @modify_source = caller(1)
       @pixbuf = nil
       @coordinate = nil
       signal_emit('modified') if event
@@ -521,7 +522,7 @@ private
     font = Plugin.filtering(:message_font, message, nil).last
     layout.font_description = font_description(font) if font
     layout.width = main_text_rect.width * Pango::SCALE
-    layout.attributes = textselector_attr_list(description_attr_list(emoji_height: emoji_height(layout.font_description)))
+    layout.attributes = textselector_attr_list(description_attr_list(emoji_height: layout.font_description.forecast_font_size))
     layout.wrap = Pango::WrapMode::CHAR
     color = Plugin.filtering(:message_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
@@ -546,8 +547,10 @@ private
     layout
   end
 
-  memoize def font_description(font)
-    Pango::FontDescription.new(font)
+  @@font_description = Hash.new{|h,k| h[k] = {} } # {scale => {font => FontDescription}}
+  def font_description(font)
+    @@font_description[scale(0xffff)][font] ||=
+      Pango::FontDescription.new(font).tap{|fd| fd.size = scale(fd.size) }
   end
 
   # 絵文字を描画する時の一辺の大きさを返す
@@ -555,12 +558,11 @@ private
   # [font] font description
   # ==== Return
   # [Integer] 高さ(px)
-  memoize def emoji_height(font)
-    layout = create_pango_layout
-    layout.font_description = font
-    layout.text = '.'
-    layout.pixel_size[1]
+  def emoji_height(font)
+    font.forecast_font_size
   end
+  deprecate :emoji_height, "Pango::FontDescription#forecast_font_size", 2020, 6
+
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
   def header_left(context = nil)
@@ -578,9 +580,19 @@ private
   def header_left_markup
     user = message.user
     if user.respond_to?(:idname)
-      Pango.parse_markup("<b>#{Pango.escape(user.idname)}</b> #{Pango.escape(user.name || '')}")
+      Pango.parse_markup("<b>#{Pango.escape(rinsuki_abbr(user))}</b> #{Pango.escape(user.name || '')}")
     else
       Pango.parse_markup(Pango.escape(user.name || ''))
+    end
+  end
+
+  def rinsuki_abbr(user)
+    return user.idname unless UserConfig[:idname_abbr]
+    prefix, domain = user.idname.split('@', 2)
+    if domain
+      "#{prefix}@#{domain.gsub(NUMERONYM_MATCHER, &NUMERONYM_CONVERTER)}"
+    else
+      user.idname
     end
   end
 

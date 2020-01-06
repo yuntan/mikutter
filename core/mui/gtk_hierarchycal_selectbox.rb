@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 require 'gtk3'
-miquire :mui, 'selectbox'
+require 'mui/gtk_selectbox'
 
 =begin rdoc
   複数選択ウィジェットを作成する。

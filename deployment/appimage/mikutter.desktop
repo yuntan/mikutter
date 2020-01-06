@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=mikutter
+Comment=Mastodon Client
+Comment[ja]=至高のMastodonクライアント
+Exec=mikutter
+Icon=mikutter
+Type=Application
+Terminal=false
+Categories=Network;
+Keywords=Mastodon;

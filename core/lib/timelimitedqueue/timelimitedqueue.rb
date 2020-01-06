@@ -10,6 +10,7 @@ require 'thread'
 require 'timeout'
 
 class TimeLimitedQueue < Queue
+  extend Gem::Deprecate
 
   TLQGroup = ThreadGroup.new
   WaitingExpire = Class.new(Timeout::Error)
@@ -23,7 +24,11 @@ class TimeLimitedQueue < Queue
   # コールバックに渡すためのクラスを取得設定する。
   # 通常Arrayだが、Setにすれば同じ値が同時に二つ入らない代わりに、高速に処理される。
   # メソッド _push_ を実装しているクラスを指定する。
-  attr_accessor :strage_class
+  attr_accessor :storage_class
+  alias :strage_class :storage_class
+  deprecate :strage_class, "storage_class", 2019, 10
+  alias :strage_class= :storage_class=
+  deprecate :strage_class=, "storage_class=", 2019, 10
 
   attr_reader :thread # :nodoc:
 
@@ -55,16 +60,19 @@ class TimeLimitedQueue < Queue
   def waiting_proc
     TLQGroup.add(Thread.current)
     loop do
-      catch(:write){
-        loop{
+      catch(:write) do
+        loop do
           if @stock.size > max
-            throw :write end
-          begin
-            Timeout.timeout(expire, WaitingExpire){ @stock << (pop) }
-          rescue WaitingExpire
-            throw :write end } }
+            throw :write
+          end
+          Timeout.timeout(expire, WaitingExpire){ @stock << pop }
+        rescue WaitingExpire
+          throw :write
+        end
+      end
       callback if not @stock.empty?
-      break if empty? end
+      break if empty?
+    end
   end
 
   def callback

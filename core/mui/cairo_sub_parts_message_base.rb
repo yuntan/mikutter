@@ -139,7 +139,8 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
   # [Gdk::Rectangle] サイズ(px)。xとyは無視され、widthとheightのみが利用される
   # [nil] アイコンを表示しない
   def icon_size
-    Gdk::Rectangle.new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE) end
+    Gdk::Rectangle.new(0, 0, helper.scale(DEFAULT_ICON_SIZE), helper.scale(DEFAULT_ICON_SIZE))
+  end
 
   # _message_ の本文のテキスト色を返す
   # ==== Args
@@ -168,17 +169,26 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
 
   # :nodoc:
   memoize def default_font
-    Pango::FontDescription.new(UserConfig[:reply_text_font]) end
+    helper.font_description(UserConfig[:reply_text_font])
+  end
 
-  attr_reader :margin
+  def margin
+    helper.scale(@margin)
+  end
 
-  attr_reader :edge
+  def edge
+    helper.scale(@edge)
+  end
 
   # Fixnum 枠線の太さ(px)
-  attr_reader :border_weight
+  def border_weight
+    helper.scale(@border_weight)
+  end
 
   # Fixnum バッジの半径(px)
-  attr_reader :badge_radius
+  def badge_radius
+    helper.scale(@badge_radius)
+  end
 
   # :nodoc:
   def initialize(*args)
@@ -267,18 +277,13 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
     else
       (result / pango_layout.line_count) * text_max_line_count(message) + pango_layout.spacing/Pango::SCALE * 2 end end
 
-  # 絵文字を描画する時の一辺の大きさを返す
-  # ==== Return
-  # [Integer] 高さ(px)
-  memoize def emoji_height
-    layout = dummy_context.create_pango_layout
-    layout.font_description = default_font
-    layout.text = '.'
-    layout.pixel_size[1]
+  def emoji_height
+    default_font.forecast_font_size
   end
+  deprecate :emoji_height, "Pango::FontDescription#forecast_font_size", 2020, 6
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
-  def header_left(message, context = dummy_context)
+  def header_left(message, context = Cairo::Context.dummy)
     text, font, attr_list = header_left_content(message)
     if text
       layout = context.create_pango_layout
@@ -288,7 +293,7 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
       layout end end
 
   # ヘッダ（右）のための Pango::Layout のインスタンスを返す
-  def header_right(message, context = dummy_context)
+  def header_right(message, context = Cairo::Context.dummy)
     text, font, attr_list = header_right_content(message)
     if text
       layout = context.create_pango_layout
@@ -331,7 +336,7 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
         context.show_pango_layout(hr_layout)
         hr_layout end end end
 
-  def main_message(message, context = dummy_context)
+  def main_message(message, context = Cairo::Context.dummy)
     layout = context.create_pango_layout
     layout.width = (width - icon_width - margin*3 - edge*2) * Pango::SCALE
     layout.attributes = description_attr_list(message)
@@ -456,7 +461,8 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
       end_index = start_index + note.description.bytesize
       if UserConfig[:miraclepainter_expand_custom_emoji] && note.respond_to?(:inline_photo)
         end_index += -note.description.bytesize + 1
-        rect = Pango::Rectangle.new(0, 0, emoji_height * Pango::SCALE, emoji_height * Pango::SCALE)
+        wh = default_font.forecast_font_size * Pango::SCALE
+        rect = Pango::Rectangle.new(0, 0, wh, wh)
         shape = Pango::AttrShape.new(rect, rect, note.inline_photo)
         shape.start_index = start_index
         shape.end_index = end_index

@@ -7,7 +7,7 @@
 # コアで変更されるもの
 # CHIの設定
 
-miquire :core, 'config'
+require 'config'
 
 module Environment
   # このアプリケーションの名前。
@@ -15,11 +15,6 @@ module Environment
 
   # 名前の略称
   ACRO = CHIConfig::ACRO
-
-  # 下の２行は馬鹿にしか見えない
-  TWITTER_CONSUMER_KEY = CHIConfig::TWITTER_CONSUMER_KEY
-  TWITTER_CONSUMER_SECRET = CHIConfig::TWITTER_CONSUMER_SECRET
-  TWITTER_AUTHENTICATE_REVISION = CHIConfig::TWITTER_AUTHENTICATE_REVISION
 
   # pidファイル
   PIDFILE = CHIConfig::PIDFILE

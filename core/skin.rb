@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 
-miquire :core, "userconfig", "plugin"
+require 'userconfig'
+require 'plugin'
 
 module Skin
   class SkinError < RuntimeError; end
   class FileNotFoundError < SkinError; end
   class ModelNotFoundError < SkinError; end
+
+  def self.extended(klass)
+    klass.class_eval{ @get_path = ::TimeLimitedStorage.new(Integer, String, 60) }
+  end
 
   extend self
   extend Gem::Deprecate
@@ -15,13 +20,14 @@ module Skin
                 nil
               else
                 UserConfig[:skin_dir] end
+  AVAILABLE_EXTENSIONS = %w[svg png jpg jpeg].map{|ext| [ext.downcase, ext.upcase] }.flatten.freeze
 
   def default_dir
-    File.join(__dir__, "skin", "data")
+    @default_dir ||= File.join(__dir__, "skin", "data").freeze
   end
 
   def default_image
-    File.join(default_dir, "notfound.png")
+    @default_image ||= File.join(default_dir, "notfound.png").freeze
   end
 
   def user_dir
@@ -52,22 +58,34 @@ module Skin
   alias :[] :photo
 
   def get_path(filename, fallback_dirs = [])
-    filename, fallback_dirs = Plugin.filtering(:skin_get, filename, fallback_dirs)
-    search_path = [ user_dir, fallback_dirs, default_dir ].flatten.compact
-
-    valid_path = search_path.map { |_|
-      File.join(_, filename)
-    }.select { |_|
-      FileTest.exist?(_)
-    }.first
-
-    if valid_path
-      valid_path
-    else
-      default_image
-    end
+    @get_path[filename.hash ^ fallback_dirs.hash] ||= get_path_nocache(filename, fallback_dirs)
   end
   alias :get :get_path
   deprecate :get, "get_path", 2018, 1 if Environment::VERSION >= [3, 6]
 
+  def get_path_nocache(filename, fallback_dirs)
+    ext = File.extname(filename.to_s)
+    if ext.empty?
+      get_path_without_extension(filename.to_s, fallback_dirs)
+    else
+      get_path_with_extension(filename.to_s, fallback_dirs)
+    end
+  end
+
+  def get_path_with_extension(filename, fallback_dirs)
+    filename, fallback_dirs = Plugin.filtering(:skin_get, filename, fallback_dirs)
+    [ user_dir, fallback_dirs, default_dir ].flatten.compact.flat_map { |dir|
+      File.join(dir, filename)
+    }.find { |path|
+      FileTest.exist?(path)
+    } || default_image
+  end
+
+  def get_path_without_extension(filename, fallback_dirs)
+    AVAILABLE_EXTENSIONS.lazy.map { |ext|
+      get_path_with_extension("#{filename}.#{ext}", fallback_dirs)
+    }.find{ |ext|
+      ext != default_image
+    } || default_image
+  end
 end

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 require 'gtk3'
-require_relative '../utils'
-miquire :mui, 'extension'
-miquire :mui, 'contextmenu'
+
+require 'mui/gtk_extension'
+require 'mui/gtk_contextmenu'
 
 # CRUDなリストビューを簡単に実現するためのクラス
 class Gtk::CRUD < Gtk::TreeView
@@ -49,14 +49,14 @@ class Gtk::CRUD < Gtk::TreeView
   protected
 
   def handle_row_activated
-    self.signal_connect("row-activated"){|view, path, column|
+    self.ssc(:row_activated){|view, path, column|
       if @updatable and iter = view.model.get_iter(path)
         if record = popup_input_window((0...model.n_columns).map{|i| iter[i] })
           force_record_update(iter, record) end end }
   end
 
   def handle_release_event
-    self.signal_connect('button_release_event'){ |widget, event|
+    self.ssc(:button_release_event){ |widget, event|
       if (event.button == 3)
         menu_pop(self, event)
         true end }
@@ -113,7 +113,7 @@ class Gtk::CRUD < Gtk::TreeView
       Gtk::CellRendererPixbuf.new
     when kind == :active
       toggled = Gtk::CellRendererToggle.new
-      toggled.signal_connect('toggled'){ |toggled, path|
+      toggled.ssc(:toggled){ |toggled, path|
         iter = model.get_iter(path)
         iter[index] = !iter[index]
         on_updated(iter) }

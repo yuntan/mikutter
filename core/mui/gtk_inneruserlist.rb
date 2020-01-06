@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 require 'gtk3'
-miquire :mui, 'extension'
+require 'mui/gtk_extension'
 
 class Gtk::InnerUserList < Gtk::TreeView
   include Gtk::TreeViewPrettyScroll
