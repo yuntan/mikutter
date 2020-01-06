@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkDialog" id="dialog">
+    <property name="modal">True</property>
+    <property name="type_hint">dialog</property>
+    <property name="use-header-bar">1</property>
+    <property name="default_width">480</property>
+    <property name="default_height">300</property>
+    <child type="action">
+      <object class="GtkButton" id="btn_cancel">
+        <property name="label">gtk-cancel</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <child type="action">
+      <object class="GtkButton" id="btn_ok">
+        <property name="can-default">True</property>
+        <property name="label">gtk-go-forward</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="use_stock">True</property>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="cancel">btn_cancel</action-widget>
+      <action-widget response="ok" default="true">btn_ok</action-widget>
+    </action-widgets>
+  </object>
+</interface>

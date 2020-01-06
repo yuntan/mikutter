@@ -7,10 +7,6 @@ require 'cairo'
 
 module Gdk::SubPartsHelper
 
-  def initialize(*args)
-    @subparts_height = nil
-    super end
-
   # 今サポートされている全てのSubPartsを配列で返す
   # ==== Return
   # Subpartsクラスの配列
@@ -31,14 +27,9 @@ module Gdk::SubPartsHelper
     self end
 
   def subparts_height
-    result = _subparts_height
-    reset_height if(@subparts_height != result)
-    @subparts_height = result end
-
-  private
-
-  def _subparts_height
-    subparts.inject(0){ |sum, part| sum + part.height } end end
+    subparts.inject(0) { |sum, part| sum + part.height }
+  end
+end
 
 class Gdk::SubParts
   include UiThreadOnly

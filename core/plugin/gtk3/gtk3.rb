@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 
-# RubyGnome2を用いてUIを表示するプラグイン
+# RubyGnomeを用いてUIを表示するプラグイン
 
 require "gtk3"
 
 miquire :mui,
-'cell_renderer_message', 'coordinate_module', 'icon_over_button', 'inner_tl', 'markup_generator',
+'icon_over_button', 'markup_generator',
 'miracle_painter', 'replyviewer', 'sub_parts_favorite', 'sub_parts_helper',
-'sub_parts_retweet', 'sub_parts_voter', 'textselector', 'timeline', 'contextmenu', 'crud',
+'sub_parts_retweet', 'sub_parts_voter', 'textselector', 'contextmenu', 'crud',
 'extension', 'intelligent_textview', 'keyconfig', 'listlist', 'message_picker', 'mtk', 'postbox',
-'pseudo_signal_handler', 'selectbox', 'timeline_utils', 'userlist', 'webicon'
+'pseudo_signal_handler', 'selectbox', 'userlist', 'webicon'
+
+require_relative 'widget/timeline'
+require_relative 'widget/dialog'
 
 require_relative 'widget/tabcontainer'
 
@@ -19,7 +22,6 @@ require_relative 'delayer'
 require_relative 'slug_dictionary'
 require_relative 'mainloop'
 require_relative 'konami_watcher'
-require_relative 'dialog_window'
 
 Plugin.create :gtk3 do
   @slug_dictionary = Plugin::Gtk::SlugDictionary.new # widget_type => {slug => Gtk}
@@ -31,6 +33,7 @@ Plugin.create :gtk3 do
   # PostBoxとか複数のペインを持つための処理が入るので、Gtk::MikutterWindowクラスを新設してそれを使う
   on_window_created do |i_window|
     window = MikutterWindow.open i_window, self
+    @parent = window
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
     # FIXME: 小さすぎる
@@ -180,14 +183,13 @@ Plugin.create :gtk3 do
   end
 
   # タイムライン作成。
-  # Gtk::TimeLine
   on_timeline_created do |i_timeline|
-    gtk_timeline = ::Gtk::TimeLine.new(i_timeline)
-    @slug_dictionary.add(i_timeline, gtk_timeline)
-    gtk_timeline.tl.ssc(key_press_event: timeline_key_press_event(i_timeline),
-                        focus_in_event:  timeline_focus_in_event(i_timeline),
-                        destroy:         timeline_destroy_event(i_timeline))
-    gtk_timeline.show_all
+    timeline = Plugin::Gtk::Timeline.new(i_timeline)
+    @slug_dictionary.add(i_timeline, timeline)
+    timeline.listbox.ssc(key_press_event: timeline_key_press_event(i_timeline),
+                         focus_in_event:  timeline_focus_in_event(i_timeline),
+                         destroy:         timeline_destroy_event(i_timeline))
+    timeline.show_all
   end
 
   # Timelineウィジェットのfocus_in_eventのコールバックを返す
@@ -261,8 +263,8 @@ Plugin.create :gtk3 do
     widget_join_tab(i_tab, widget) if widget end
 
   on_gui_timeline_add_messages do |i_timeline, messages|
-    gtk_timeline = widgetof(i_timeline)
-    gtk_timeline.add(messages) if gtk_timeline and not gtk_timeline.destroyed? end
+    timeline = widgetof(i_timeline)
+    timeline.push_all!(messages) if timeline and not timeline.destroyed? end
 
   on_gui_postbox_join_widget do |i_postbox|
     type_strict i_postbox => Plugin::GUI::Postbox
@@ -489,7 +491,12 @@ Plugin.create :gtk3 do
     [widgetof(i_widget)] end
 
   on_gui_dialog do |plugin, title, default, proc, promise|
-    Plugin::Gtk::DialogWindow.open(plugin: plugin, title: title, default: default, promise: promise, &proc)
+    Plugin::Gtk::Dialog.open(plugin: plugin,
+                             title: title,
+                             default: default,
+                             promise: promise,
+                             parent: @parent,
+                             &proc)
   end
 
   # タブ _tab_ に _widget_ を入れる

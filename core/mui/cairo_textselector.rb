@@ -33,7 +33,7 @@ module Gdk
       @textselector_pressing = true
       before = textselector_range
       @textselect_end = @textselect_start = index + trail
-      on_modify if before == textselector_range
+      queue_draw if before == textselector_range
       self end
 
     def textselector_release(index = nil, trail=0)
@@ -44,14 +44,15 @@ module Gdk
     def textselector_unselect
       @textselect_end = @textselect_start = nil
       @textselector_pressing = false
-      on_modify
+      queue_draw
       self end
 
     def textselector_select(index, trail=0)
       if(@textselector_pressing)
         before = textselector_range
         @textselect_end = index + trail
-        on_modify if before == textselector_range end
+        queue_draw if before == textselector_range
+      end
       self end
 
     def textselector_attr_list(attr_list=Pango::AttrList.new)

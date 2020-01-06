@@ -21,7 +21,7 @@ module Plugin::Gtk
     register_widget Plugin::GUI::Pane,           ::Gtk::Notebook
     register_widget Plugin::GUI::Tab,            ::Gtk::EventBox
     register_widget Plugin::GUI::TabToolbar,     ::Gtk::TabToolbar
-    register_widget Plugin::GUI::Timeline,       ::Gtk::TimeLine
+    register_widget Plugin::GUI::Timeline,       ::Plugin::Gtk::Timeline
     register_widget Plugin::GUI::Cluster,        ::Gtk::Notebook
     register_widget Plugin::GUI::Fragment,     ::Gtk::EventBox
     register_widget Plugin::GUI::TabChildWidget, ::Gtk::TabContainer
