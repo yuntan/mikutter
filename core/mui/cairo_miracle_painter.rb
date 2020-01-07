@@ -522,7 +522,9 @@ private
     font = Plugin.filtering(:message_font, message, nil).last
     layout.font_description = font_description(font) if font
     layout.width = main_text_rect.width * Pango::SCALE
-    layout.attributes = textselector_attr_list(description_attr_list(emoji_height: layout.font_description.forecast_font_size))
+    layout.attributes = textselector_attr_list(
+      description_attr_list(emoji_height: layout.forecast_font_size)
+    )
     layout.wrap = Pango::WrapMode::CHAR
     color = Plugin.filtering(:message_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
@@ -552,17 +554,6 @@ private
     @@font_description[Gdk.scale(0xffff)][font] ||=
       Pango::FontDescription.new(font).tap{|fd| fd.size = Gdk.scale(fd.size) }
   end
-
-  # 絵文字を描画する時の一辺の大きさを返す
-  # ==== Args
-  # [font] font description
-  # ==== Return
-  # [Integer] 高さ(px)
-  def emoji_height(font)
-    font.forecast_font_size
-  end
-  deprecate :emoji_height, "Pango::FontDescription#forecast_font_size", 2020, 6
-
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
   def header_left(context = nil)
