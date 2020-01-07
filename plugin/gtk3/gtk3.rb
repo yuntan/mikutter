@@ -591,16 +591,14 @@ Plugin.create :gtk3 do
       Plugin::GUI.keypress(::Gtk::keyname([event.keyval ,event.state]), i_tab) }
     widget.vexpand = i_tab.pack_rule[container.children.size]
     container.add(widget)
-    pane.insert_page(
-      where_should_insert_it(
-        i_tab,
-        pane.each_pages.map{ |target_page|
-          find_implement_widget_by_gtkwidget(pane.get_tab_label(target_page))
-        },
-        i_tab.parent.children
-      ),
-      container, tab
+    pos = where_should_insert_it(
+      i_tab,
+      pane.each_pages.map{ |target_page|
+        find_implement_widget_by_gtkwidget(pane.get_tab_label(target_page))
+      },
+      i_tab.parent.children
     )
+    pane.insert_page(container, tab, pos)
     pane.set_tab_reorderable(container, true).set_tab_detachable(container, true)
     true end
 
