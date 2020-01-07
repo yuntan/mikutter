@@ -59,7 +59,7 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   type_register
 
-  signal_new(:clicked, GLib::Signal::RUN_FIRST, nil, nil, Gdk::EventButton)
+  signal_new(:click, GLib::Signal::RUN_FIRST, nil, nil, Gdk::EventButton)
 
   # TODO: gtk3 remove
   # signal_new(:modified, GLib::Signal::RUN_FIRST, nil, nil)
@@ -490,6 +490,12 @@ class Gdk::MiraclePainter < Gtk::Widget
   end
 =end
 
+  @@font_description = Hash.new{|h,k| h[k] = {} } # {scale => {font => FontDescription}}
+  def font_description(font)
+    @@font_description[Gdk.scale(0xffff)][font] ||=
+      Pango::FontDescription.new(font).tap{|fd| fd.size = Gdk.scale(fd.size) }
+  end
+
 private
 
   def main_icon_rect
@@ -547,12 +553,6 @@ private
       c.fill
     end
     layout
-  end
-
-  @@font_description = Hash.new{|h,k| h[k] = {} } # {scale => {font => FontDescription}}
-  def font_description(font)
-    @@font_description[Gdk.scale(0xffff)][font] ||=
-      Pango::FontDescription.new(font).tap{|fd| fd.size = Gdk.scale(fd.size) }
   end
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す

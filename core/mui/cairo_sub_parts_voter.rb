@@ -14,7 +14,7 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
     @icon_width, @icon_height, @margin, @votes, @user_icon = 24, 24, 2, get_default_votes.to_a, Hash.new
     @avatar_rect = []
     @icon_ofst = 0
-    helper.ssc(:clicked){ |this, e, x, y|
+    helper.ssc(:click){ |this, e, x, y|
       ofsty = helper.mainpart_height
       helper.subparts.each{ |part|
         break if part == self

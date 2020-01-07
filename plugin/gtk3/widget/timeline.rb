@@ -11,8 +11,13 @@ module Plugin::Gtk
 =end
   class Timeline < Gtk::Grid
     class Row < Gtk::ListBoxRow
-      def initialize
-        super
+      attr_reader :model
+
+      def initialize(model)
+        super()
+
+        @model = model
+        add(::Gdk::MiraclePainter.new model)
 
         ssc :state_flags_changed do
           selected = (state_flags & Gtk::StateFlags::SELECTED).nonzero?
@@ -59,7 +64,7 @@ module Plugin::Gtk
       @listbox = Gtk::ListBox.new.tap do |listbox|
         listbox.selection_mode = :multiple
         listbox.set_sort_func do |row1, row2|
-          @order.call row1.model <=> (@order.call row2.model)
+          (@order.call row1.model) <=> (@order.call row2.model)
         end
       end
 
@@ -130,8 +135,7 @@ module Plugin::Gtk
       row = @hash[model.uri.hash]
       @listbox.remove row if row
 
-      row = Row.new
-      row.add ::Gdk::MiraclePainter.new model
+      row = Row.new model
       row.show_all
       @listbox.add row
       @hash[model.uri.hash] = row
