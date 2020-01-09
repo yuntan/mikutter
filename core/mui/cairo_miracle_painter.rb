@@ -235,8 +235,8 @@ class Gdk::MiraclePainter < Gtk::Widget
       true # stop propagation
     end
 
-    def signal_do_clicked(ev)
-      notice 'MiraclePainter*clicked(ev)' if VERBOSE
+    def signal_do_click(ev)
+      notice 'MiraclePainter*click(ev)' if VERBOSE
 
       x, y = ev.x, ev.y
       case ev.button
