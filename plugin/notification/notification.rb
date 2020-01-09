@@ -1,4 +1,5 @@
 # coding: utf-8
+require 'json'
 
 Plugin.create :notification do
   settings(_('お知らせ')) do
