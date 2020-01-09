@@ -75,7 +75,7 @@ module Plugin::Gtk
     def register_response_listener
       ssc(:response) do |widget, response|
         case response
-        when Gtk::Dialog::RESPONSE_OK
+        when :ok
           case @container.state
           when Container::STATE_WAIT
             @container.run(Response::Ok.new(@container)).next do
@@ -101,7 +101,7 @@ module Plugin::Gtk
         false
       end
       @container.ssc(:state_changed) do |widget, state|
-        action_area.sensitive = state == Gtk::STATE_INSENSITIVE
+        action_area.sensitive = state == :insensitive
         false
       end
     end
