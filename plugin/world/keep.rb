@@ -5,6 +5,7 @@ require 'environment'
 require 'fileutils'
 require 'openssl'
 require 'securerandom'
+require 'json'
 
 =begin rdoc
 アカウントデータの永続化を行うユーティリティ。
@@ -35,8 +36,8 @@ module Plugin::World
             if FileTest.exist? ACCOUNT_FILE
               decrypted_string = decrypt(File.open(ACCOUNT_FILE, 'rb', &:read))
               begin
-                JSON.parse(decrypted_string, symbolize_names: true)
-              rescue JSON::ParserError
+                ::JSON.parse(decrypted_string, symbolize_names: true)
+              rescue ::JSON::ParserError
                 # 3.6.4以前はYAMLになっている。
                 # 構造自体には互換性があるため単純にJSONにコンバートする
                 d = account_write(YAML.load(decrypted_string))
@@ -116,7 +117,7 @@ module Plugin::World
     def account_write(account_data = @account_data)
       FileUtils.mkdir_p File.dirname(ACCOUNT_FILE)
       File.open(ACCOUNT_TMP, 'wb'.freeze) do |file|
-        file << encrypt(JSON.dump(account_data)) end
+        file << encrypt(::JSON.dump(account_data)) end
       FileUtils.mv(ACCOUNT_TMP, ACCOUNT_FILE)
       account_data end
 
