@@ -116,11 +116,14 @@ class Gdk::SubPartsMastodonStatusInfo < Gdk::SubParts
   end
 
   def margin
-    helper.scale(@margin)
+    Gdk.scale(@margin)
   end
 
   def icon_size
-    @icon_size ||= Gdk::Rectangle.new(0, 0, helper.scale(DEFAULT_ICON_SIZE), helper.scale(DEFAULT_ICON_SIZE))
+    @icon_size ||= begin
+      size = Gdk.scale DEFAULT_ICON_SIZE
+      Gdk::Rectangle.new(0, 0, size, size)
+    end
   end
 
   def height

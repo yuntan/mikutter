@@ -139,7 +139,7 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
   # [Gdk::Rectangle] サイズ(px)。xとyは無視され、widthとheightのみが利用される
   # [nil] アイコンを表示しない
   def icon_size
-    Gdk::Rectangle.new(0, 0, helper.scale(DEFAULT_ICON_SIZE), helper.scale(DEFAULT_ICON_SIZE))
+    Gdk::Rectangle.new(0, 0, Gdk.scale(DEFAULT_ICON_SIZE), Gdk.scale(DEFAULT_ICON_SIZE))
   end
 
   # _message_ の本文のテキスト色を返す
@@ -173,21 +173,21 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
   end
 
   def margin
-    helper.scale(@margin)
+    Gdk.scale(@margin)
   end
 
   def edge
-    helper.scale(@edge)
+    Gdk.scale(@edge)
   end
 
   # Fixnum 枠線の太さ(px)
   def border_weight
-    helper.scale(@border_weight)
+    Gdk.scale(@border_weight)
   end
 
   # Fixnum バッジの半径(px)
   def badge_radius
-    helper.scale(@badge_radius)
+    Gdk.scale(@badge_radius)
   end
 
   # :nodoc:
@@ -283,20 +283,20 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
   deprecate :emoji_height, "Pango::FontDescription#forecast_font_size", 2020, 6
 
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
-  def header_left(message, context = Cairo::Context.dummy)
+  def header_left(message, context=nil)
     text, font, attr_list = header_left_content(message)
     if text
-      layout = context.create_pango_layout
+      layout = (context || helper).create_pango_layout
       layout.attributes = attr_list if attr_list
       layout.font_description = font if font
       layout.text = text
       layout end end
 
   # ヘッダ（右）のための Pango::Layout のインスタンスを返す
-  def header_right(message, context = Cairo::Context.dummy)
+  def header_right(message, context=nil)
     text, font, attr_list = header_right_content(message)
     if text
-      layout = context.create_pango_layout
+      layout = (context || helper).create_pango_layout
       layout.attributes = attr_list if attr_list
       layout.font_description = font if font
       layout.text = text
@@ -336,8 +336,8 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
         context.show_pango_layout(hr_layout)
         hr_layout end end end
 
-  def main_message(message, context = Cairo::Context.dummy)
-    layout = context.create_pango_layout
+  def main_message(message, context=nil)
+    layout = (context || helper).create_pango_layout
     layout.width = (width - icon_width - margin*3 - edge*2) * Pango::SCALE
     layout.attributes = description_attr_list(message)
     layout.wrap = Pango::WrapMode::CHAR

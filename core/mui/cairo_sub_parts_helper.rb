@@ -58,7 +58,7 @@ class Gdk::SubParts
   end
 
   def width
-    helper.width end
+    helper.allocated_width end
 
   def height
     0 end

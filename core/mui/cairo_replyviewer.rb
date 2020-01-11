@@ -41,7 +41,7 @@ class Gdk::ReplyViewer < Gdk::SubPartsMessageBase
         helper.reset_height
       end
     end
-    helper.scale(@edge)
+    Gdk.scale(@edge)
   end
 
   def badge(_message)
@@ -72,7 +72,8 @@ class Gdk::ReplyViewer < Gdk::SubPartsMessageBase
   def icon_size
     if show_icon?
       if UserConfig[:reply_icon_size]
-        Gdk::Rectangle.new(0, 0, helper.scale(UserConfig[:reply_icon_size]), helper.scale(UserConfig[:reply_icon_size]))
+        size = Gdk.scale UserConfig[:reply_icon_size]
+        Gdk::Rectangle.new(0, 0, size, size)
       else
         super
       end

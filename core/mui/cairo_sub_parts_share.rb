@@ -28,22 +28,26 @@ class Gdk::SubPartsShare < Gdk::SubPartsVoter
   Delayer.new do
     Plugin.create(:sub_parts_share) do
       share = ->(user, message) {
-        Gdk::MiraclePainter.findbymessage_d(message).next { |mps|
-          mps.reject(&:destroyed?).each do |mp|
-            mp.subparts.find { |sp| sp.class == Gdk::SubPartsShare }.add(user)
-          end
-        }.terminate
+        # TODO: gtk3
+        notice "TODO"
+        # Gdk::MiraclePainter.findbymessage_d(message).next { |mps|
+        #   mps.reject(&:destroyed?).each do |mp|
+        #     mp.subparts.find { |sp| sp.class == Gdk::SubPartsShare }.add(user)
+        #   end
+        # }.terminate
       }
 
       on_share(&share)
       on_before_share(&share)
 
       destroy_share = ->(user, message) do
-        Gdk::MiraclePainter.findbymessage_d(message).next { |mps|
-          mps.reject(&:destroyed?).each do |mp|
-            mp.subparts.find { |sp| sp.class == Gdk::SubPartsShare }.delete(user)
-          end
-        }.terminate
+        # TODO: gtk3
+        notice "TODO"
+        # Gdk::MiraclePainter.findbymessage_d(message).next { |mps|
+        #   mps.reject(&:destroyed?).each do |mp|
+        #     mp.subparts.find { |sp| sp.class == Gdk::SubPartsShare }.delete(user)
+        #   end
+        # }.terminate
       end
 
       on_fail_share(&destroy_share)

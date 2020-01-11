@@ -52,15 +52,15 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
   end
 
   def icon_width
-    helper.scale(@icon_width)
+    Gdk.scale @icon_height
   end
 
   def icon_height
-    helper.scale(@icon_height)
+    Gdk.scale @icon_height
   end
 
   def margin
-    helper.scale(@margin)
+    Gdk.scale @margin
   end
 
   def get_user_by_point(x)

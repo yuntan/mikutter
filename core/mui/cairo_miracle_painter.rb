@@ -85,7 +85,7 @@ class Gdk::MiraclePainter < Gtk::Widget
   attr_reader :model, :selected
   alias message model
   # TODO: gtk3 deprecate :message
-  deprecate :message, :model, 2019, 10
+  # deprecate :message, :model, 2019, 10
 
   # TODO: gtk3 adjust size
   WIDTH_MIN = 100 # minimum width
@@ -452,16 +452,17 @@ class Gdk::MiraclePainter < Gtk::Widget
   # def signal_do_expose_event()
   # end
 
-=begin
   # 更新イベントを発生させる
   def on_modify(event=true)
     if not destroyed?
       @pixbuf = nil
       @coordinate = nil
-      signal_emit('modified') if event
+      # signal_emit('modified') if event
+      event and signal_emit :draw
     end
   end
 
+=begin
   # 画面上にこれが表示されているかを返す
   def visible?
     # TODO: gtk3, visible_rangeをgtk3 gemで定義する
