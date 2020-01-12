@@ -10,13 +10,6 @@ module Gtk::FormDSL
   PIXBUF_PHOTO_FILTER = Hash[GdkPixbuf::Pixbuf.formats.map{|f| ["#{f.description} (#{f.name})", f.extensions.flat_map{|x| [x.downcase.freeze, x.upcase.freeze] }.freeze] }].freeze
   PHOTO_FILTER = {'All images' => PIXBUF_PHOTO_FILTER.values.flatten}.merge(PIXBUF_PHOTO_FILTER).merge('All files' => ['*'])
 
-  def initialize(*args)
-    super
-    if block_given?
-      instance_eval(&Proc.new)
-    end
-  end
-
   # 複数行テキスト
   # ==== Args
   # [label] ラベル
@@ -115,18 +108,43 @@ module Gtk::FormDSL
   # ==== Args
   # [label] ラベル
   # [config] キー
-  def input(label, config)
-    container = Gtk::HBox.new(false, 0)
-    input = Gtk::Entry.new
-    input.text = self[config] || ""
-    container.pack_start(Gtk::Label.new(label), false, true, 0) if label
-    container.pack_start(Gtk::Alignment.new(1.0, 0.5, 0, 0).add(input), true, true, 0)
-    input.signal_connect(:changed){ |widget|
-      self[config] = widget.text
+  def input(text, config, action=nil)
+    label = Gtk::Label.new(text).apply do
+      self.halign = :end
+    end
+    preedit = self[config] || ""
+    entry = Gtk::Entry.new.apply do
+      self.hexpand = true
+      self.text = preedit
+    end
+    entry.ssc :changed do |entry|
+      self[config] = entry.text
       false
-    }
-    add container
-    container
+    end
+    widget_right = entry
+
+    if action
+      # TODO; gtk3 case action
+      button = Gtk::Button.new.apply do
+        self.image = Gtk::Image.new icon_name: 'edit-paste-symbolic'
+      end
+      button.ssc :clicked do
+        get_clipboard(Gdk::Selection::CLIPBOARD)
+          .request_text { |_, text| entry.text = text }
+      end
+      box = Gtk::Box.new(:horizontal).apply do
+        style_context.add_class :linked
+        add entry
+        add button
+      end
+      widget_right = box
+    end
+
+    # attach to a new row of the grid
+    attach_next_to label, nil, :bottom, 1, 1
+    attach_next_to widget_right, label, :right, 1, 1
+
+    widget_right
   end
 
   # 一行テキストボックス(非表示)
@@ -272,10 +290,11 @@ module Gtk::FormDSL
   #   連想配列で、 _値_ => _ラベル_ の形式で、デフォルト値を与える。
   #   _block_ と同時に与えれられたら、 _default_ の値が先に入って、 _block_ は後に入る。
   # [&block] 内容
-  def select(label, config, default = {})
-    builder = Gtk::FormDSL::Select.new(self, default)
-    builder.instance_eval(&Proc.new) if block_given?
-    add container = builder.build(label, config)
+  def select(label, config, default={}, &block)
+    builder = Gtk::FormDSL::Select.new self, default
+    block_given? and builder.instance_eval(&block)
+    container = builder.build label, config
+    attach_next_to container, nil, :bottom, 2, 1
     container
   end
 
@@ -296,12 +315,25 @@ module Gtk::FormDSL
 
   # 引数のテキストを表示する。
   def label(text)
-    label = Gtk::Label.new(text, false)
-    label.
-      set_wrap(true).
-      set_single_line_mode(false)
-    add label.left
-    label
+    Gtk::Label.new(text).apply do
+      self.halign = :start
+      self.wrap = true
+      self.xalign = 0
+    end.tap do |label|
+      attach_next_to label, nil, :bottom, 2, 1
+    end
+  end
+
+  # 引数のテキストを表示する。
+  def markup(text)
+    Gtk::Label.new.apply do
+      self.halign = :start
+      self.wrap = true
+      self.markup = text
+      self.xalign = 0
+    end.tap do |label|
+      attach_next_to label, nil, :bottom, 2, 1
+    end
   end
 
   # Diva::Model の内容を表示する。
