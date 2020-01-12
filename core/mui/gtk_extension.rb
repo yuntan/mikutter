@@ -185,6 +185,13 @@ end
 class Gtk::Widget
   extend Gem::Deprecate
 
+  # Kotlinのapply風のメソッド
+  # https://kotlinlang.org/docs/reference/scope-functions.html#apply
+  def apply(&p)
+    instance_eval(&p)
+    self
+  end
+
   # ウィジェットを上寄せで配置する
   def top
     Gtk::Alignment.new(0.0, 0, 0, 0).add(self)
