@@ -371,7 +371,8 @@ Plugin.create :gtk3 do
               tl.set_cursor(path, column, false) if path end end end end end
 
   on_gui_timeline_set_order do |i_timeline, order|
-    widgetof(i_timeline).set_order(&order) end
+    widgetof(i_timeline).order = order
+  end
 
   filter_gui_timeline_select_messages do |i_timeline, messages|
     timeline = widgetof(i_timeline)

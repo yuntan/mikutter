@@ -48,6 +48,7 @@ module Plugin::Gtk
 
     attr_reader :postbox
     attr_reader :listbox
+    attr_accessor :order
 
     def initialize(imaginary=nil)
       super()
