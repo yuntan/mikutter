@@ -74,14 +74,13 @@ module Plugin::Gtk
 
     def register_response_listener
       ssc(:response) do |widget, response|
-        case response
-        when :ok
+        if Gtk::ResponseType::OK == response
           case @container.state
           when Container::STATE_WAIT
             @container.run(Response::Ok.new(@container)).next do
               # 確認画面ではボタンのテキストを「追加」に変更
               @container.state == Container::STATE_EXIT \
-                && (@btn_ok.label = 'gtk-add')
+                and (@btn_ok.label = 'gtk-add')
             end
           when Container::STATE_EXIT
             @promise.call(Response::Ok.new(@container)) if @promise
@@ -140,7 +139,7 @@ module Plugin::Gtk
       end
     end
 
-    class Container < Gtk::Box
+    class Container < Gtk::Grid
       EXIT = :exit
       AWAIT = :await
 
@@ -184,12 +183,15 @@ module Plugin::Gtk
         self.class.new(@plugin, @values)
       end
 
-      def initialize(plugin, default=Hash.new, &proc)
+      def initialize(plugin, default=Hash.new, &p)
+        super()
+        self.margin = 30
+        self.row_spacing = self.column_spacing = 12
+
         @plugin = plugin
         @values = default
-        @proc = proc
+        @proc = p
         reset
-        super(:vertical){}
       end
 
       def run(response=nil)
@@ -210,6 +212,9 @@ module Plugin::Gtk
           when STATE_AWAIT
             resume(response)
           end
+        end.trap do |err|
+          error err.message
+          $stderr.puts err.backtrace
         end
       end
 
@@ -228,6 +233,9 @@ module Plugin::Gtk
           @awaiting_deferred.next{|deferred_result|
             run(deferred_result)
           }.trap{|err|
+            error err.message
+            $stderr.puts err.backtrace
+
             @error_observer.on_abort(err) if @error_observer
           }
         else
