@@ -14,13 +14,13 @@ class Gtk::FormDSL::Select
   # [label] ラベル。 _&block_ がなければ使われる。文字列。
   # [&block] Plugin::Settings のインスタンス内で評価され、そのインスタンスが内容として使われる
   def option(value, label = nil, &block)
-    if block_given?
-      widget = @formdsl.instance_eval(&block)
-      widget.parent&.remove widget
-      @options += [[value, label, widget].freeze]
-    else
-      @options += [[value, label].freeze]
-    end
+    @options += if block_given?
+                  widgets = @formdsl.instance_eval(&block)
+                  widgets.each { |w| w.parent&.remove w }
+                  [[value, label, widgets.last].freeze]
+                else
+                  [[value, label].freeze]
+                end
     @options.freeze
     self
   end
@@ -58,12 +58,13 @@ class Gtk::FormDSL::Select
     radio = Gtk::RadioButton.new
     rows = @options.map do |value, text, widget|
       box = Gtk::Box.new :horizontal
-      box.margin = 12
+      box.margin = box.spacing = 12
 
       label = Gtk::Label.new text
       widget ||= Gtk::RadioButton.new(member: radio).tap do |w|
         w.ssc(:toggled) { @formdsl[key] = value }
       end
+      widget.hexpand = false
 
       box.pack_start(label).pack_end(widget)
     end

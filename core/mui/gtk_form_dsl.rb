@@ -144,7 +144,7 @@ module Gtk::FormDSL
     attach_next_to label, nil, :bottom, 1, 1
     attach_next_to widget_right, label, :right, 1, 1
 
-    widget_right
+    [label, widget_right].freeze
   end
 
   # 一行テキストボックス(非表示)
