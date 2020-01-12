@@ -65,7 +65,7 @@ module Plugin::Gtk
       @listbox = Gtk::ListBox.new.tap do |listbox|
         listbox.selection_mode = :multiple
         listbox.set_sort_func do |row1, row2|
-          (@order.call row1.model) <=> (@order.call row2.model)
+          (@order.call row2.model) <=> (@order.call row1.model)
         end
       end
 
