@@ -85,6 +85,7 @@ Plugin.create :change_account do
       Plugin.call(:world_create, res.result)
     }.trap{ |err|
       error err
+      $stderr.puts err.backtrace
     }
   end
 
