@@ -25,7 +25,7 @@ settingsの中身は、 Plugin::Settings のインスタンスの中で実行さ
 (チェックボックス)。明確にウィジェットを設定できるわけではなくて、値の意味を定義するだけなので、
 前後関係などに影響されてウィジェットが変わる場合があるかも。
 =end
-class Plugin::Settings::SettingDSL < Gtk::VBox
+class Plugin::Settings::SettingDSL < Gtk::Grid
   include Gtk::FormDSL
 
   def create_inner_setting
