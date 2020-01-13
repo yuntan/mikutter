@@ -33,7 +33,9 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
       false
     }
     last_motion_user = nil
-    helper.ssc(:motion_notify_event){ |this, x, y|
+    helper.ssc(:motion_notify_event){ |_, x, y|
+      x && y or next
+
       if 0 != height
         tipset = ''
         ofsty = helper.mainpart_height
