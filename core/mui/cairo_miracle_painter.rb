@@ -497,6 +497,13 @@ class Gdk::MiraclePainter < Gtk::Widget
       Pango::FontDescription.new(font).tap{|fd| fd.size = Gdk.scale(fd.size) }
   end
 
+  def mainpart_height
+    [
+      (main_message.size[1] + header_left.size[1]) / Pango::SCALE,
+      ICON_SIZE[1],
+    ].max + MARGIN
+  end
+
 private
 
   def main_icon_rect
@@ -716,13 +723,6 @@ private
     context.save{
       context.translate(main_text_rect.x, main_text_rect.y)
       context.show_pango_layout(main_message(context)) } end
-
-  def mainpart_height
-    [
-      (main_message.size[1] + header_left.size[1]) / Pango::SCALE,
-      ICON_SIZE[1],
-    ].max + MARGIN
-  end
 
   # このMiraclePainterの(x , y)にマウスポインタがある時に表示すべきカーソルの名前を返す。
   # ==== Args
