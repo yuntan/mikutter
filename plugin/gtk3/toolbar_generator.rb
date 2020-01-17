@@ -20,8 +20,8 @@ module Plugin::Gtk
           name = if defined? face.call then lambda{ |x| face.call(event) } else face end
           toolitem = ::Gtk::Button.new
           toolitem.add(::Gtk::WebIcon.new(command[:icon], 16, 16))
-          toolitem.tooltip(name)
-          toolitem.relief = ::Gtk::RELIEF_NONE
+          toolitem.tooltip_text = name
+          toolitem.relief = :none
           toolitem.ssc(:clicked){
             current_world, = Plugin.filtering(:world_current, nil)
             event.world = current_world

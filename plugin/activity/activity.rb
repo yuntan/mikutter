@@ -165,8 +165,8 @@ Plugin.create(:activity) do
 
     nativewidget(
       Gtk::Paned.new(:vertical)
-        .pack1(activity_view_sw, true, true)
-        .pack2(detail_view, true, false)
+        .pack1(activity_view_sw, resize: true, shrink: true)
+        .pack2(detail_view, resize: true, shrink: false)
     )
   end
 

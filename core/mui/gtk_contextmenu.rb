@@ -47,7 +47,7 @@ module Gtk
               item = Gtk::ImageMenuItem.new(label_text)
               item.set_image(Gtk::WebIcon.new(icon, 16, 16))
             else
-              item = Gtk::MenuItem.new(label_text)
+              item = Gtk::MenuItem.new(label: label_text)
             end
             if proc
               item.ssc('activate') { |w|

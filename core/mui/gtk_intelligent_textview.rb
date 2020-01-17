@@ -41,7 +41,7 @@ class Gtk::IntelligentTextview < Gtk::TextView
     @style_generator = style
     self.editable = false
     self.cursor_visible = false
-    self.wrap_mode = Gtk::TextTag::WRAP_CHAR
+    self.wrap_mode = :char
     gen_body(msg) if msg
   end
 

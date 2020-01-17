@@ -48,7 +48,7 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
             last_motion_user = user
             if user
               tipset = user.title end end end
-        self.tooltip_text = tipset
+        helper.tooltip_text = tipset
       end
       false }
   end

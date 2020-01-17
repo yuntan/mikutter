@@ -177,7 +177,8 @@ Plugin.create :gtk3 do
   # ==== Return
   # Tab(Gtk::EventBox)
   def create_tab(i_tab)
-    tab = ::Gtk::EventBox.new.tooltip(i_tab.name)
+    tab = ::Gtk::EventBox.new
+    tab.tooltip_text = i_tab.name
     tab.visible_window = false
     @slug_dictionary.add(i_tab, tab)
     tab_update_icon(i_tab)
@@ -607,7 +608,7 @@ Plugin.create :gtk3 do
     type_strict i_tab => Plugin::GUI::TabLike
     tab = widgetof(i_tab)
     if tab
-      tab.tooltip(i_tab.name)
+      tab.tooltip_text = i_tab.name
       tab.remove(tab.child) if tab.child
       if i_tab.icon
         tab.add(::Gtk::WebIcon.new(i_tab.icon, 24, 24).show)

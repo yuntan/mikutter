@@ -27,14 +27,14 @@ module Gtk
       rect = Gdk::Rectangle.new(0, 0, rect, height) if height
       case url
       when Diva::Model
-        super(load_model(url, rect))
+        super(pixbuf: load_model(url, rect))
       when GdkPixbuf::Pixbuf
-        super(url)
+        super(pixbuf: url)
       else
         photo = Enumerator.new{|y|
           Plugin.filtering(:photo_filter, url, y)
         }.first
-        super(load_model(photo || Skin[:notfound], rect))
+        super(pixbuf: load_model(photo || Skin[:notfound], rect))
       end
     end
 

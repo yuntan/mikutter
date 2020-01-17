@@ -111,12 +111,14 @@ class Gtk::WorldShifter < Gtk::EventBox
 
   def add_face_widget_ifn
     if not @face
-      @face = Gtk::Image.new(Skin[:loading].pixbuf(width: Gdk.scale(UserConfig[:gtk_accountbox_geometry]), height: Gdk.scale(UserConfig[:gtk_accountbox_geometry])))
+      size = Gdk.scale UserConfig[:gtk_accountbox_geometry]
+      pb = Skin[:loading].pixbuf width: size, height: size
+      @face = Gtk::Image.new pixbuf: pb
       self.add(@face).show_all
     end
     world, = Plugin.filtering(:world_current, nil)
     if world
-      @face.tooltip(world.title)
+      @face.tooltip_text = world.title
     end
   end
 
