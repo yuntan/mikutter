@@ -4,18 +4,24 @@ Plugin::create(:set_view) do
 
   UserConfig[:mumble_system_bg] ||= [255*222, 65535, 255*176]
 
-  filter_message_background_color do |miracle_painter, color|
-    if !color
-      slug = miracle_painter.message.class.slug
-      color = if miracle_painter.selected
-                UserConfig[:"#{slug}_selected_bg"] || UserConfig[:mumble_selected_bg]
-              elsif(miracle_painter.message.from_me?)
-                UserConfig[:"#{slug}_self_bg"] || UserConfig[:mumble_self_bg]
-              elsif(miracle_painter.message.to_me?)
-                UserConfig[:"#{slug}_reply_bg"] || UserConfig[:mumble_reply_bg]
-              else
-                UserConfig[:"#{slug}_basic_bg"] || UserConfig[:mumble_basic_bg] end end
-    [miracle_painter, color]
+  filter_message_selected_bg_color do |model, color|
+    color and return [model, color]
+    slug = model.class.slug
+    color = UserConfig[:"#{slug}_selected_bg"] || UserConfig[:mumble_selected_bg]
+    [model, color]
+  end
+
+  filter_message_bg_color do |model, color|
+    color and return [model, color]
+    slug = model.class.slug
+    color = if model.from_me?
+              UserConfig[:"#{slug}_self_bg"] || UserConfig[:mumble_self_bg]
+            elsif model.to_me?
+              UserConfig[:"#{slug}_reply_bg"] || UserConfig[:mumble_reply_bg]
+            else
+              UserConfig[:"#{slug}_basic_bg"] || UserConfig[:mumble_basic_bg]
+            end
+    [model, color]
   end
 
   filter_subparts_replyviewer_background_color do |message, color|

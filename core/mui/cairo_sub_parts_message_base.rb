@@ -114,13 +114,13 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
   def on_click(e, message)
   end
 
-  # SubParts内の _Message_ の背景色を返す
+  # SubParts内の _Diva::Model_ の背景色を返す
   # ==== Args
-  # [message] Message
+  # [model] Diva::Model
   # ==== Return
   # Array :: red, green, blueの配列。各要素は0.0..1.0の範囲。
-  def background_color(message)
-    color = Plugin.filtering(:message_background_color, helper, nil).last
+  def background_color(model)
+    color = Plugin.filtering(:message_bg_color, model, nil).last
     if color.is_a? Array and 3 == color.size
       color.map{ |c| c.to_f / 65536 }
     else
