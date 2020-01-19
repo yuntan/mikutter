@@ -10,33 +10,14 @@ module Plugin::Gtk
   投稿ボックスとスクロール可能のリストビューを備えたウィジェット
 =end
   class Timeline < Gtk::Grid
-    class Row < Gtk::ListBoxRow
-      attr_reader :model
-
-      def initialize(model)
-        super()
-
-        @model = model
-        add(::Gdk::MiraclePainter.new model)
-
-        ssc :state_flags_changed do
-          selected = (state_flags & Gtk::StateFlags::SELECTED).nonzero?
-          if selected
-            # TODO
-          else
-            # TODO
-          end
-        end
-      end
-    end
 
     Delayer.new do
       plugin = Plugin::create :core
       plugin.add_event :message_modified do |model|
-        # TODO
+        notice "TODO message_modified"
       end
       plugin.add_event :destroyed do |models|
-        # TODO
+        notice "TODO destroyed"
       end
     end
 
@@ -134,9 +115,9 @@ module Plugin::Gtk
 
     def check_and_push!(model)
       row = @hash[model.uri.hash]
-      @listbox.remove row if row
+      row and @listbox.remove row
 
-      row = Row.new model
+      row = ::Gdk::MiraclePainter.new model
       row.show_all
       @listbox.add row
       @hash[model.uri.hash] = row

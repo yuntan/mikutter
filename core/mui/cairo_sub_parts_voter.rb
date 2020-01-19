@@ -14,7 +14,8 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
     @icon_width, @icon_height, @margin, @votes, @user_icon = 24, 24, 2, get_default_votes.to_a, Hash.new
     @avatar_rect = []
     @icon_ofst = 0
-    helper.ssc(:click){ |this, e, x, y|
+    helper.ssc(:clicked){ |_, ev|
+      x, y = ev.x, ev.y
       ofsty = helper.mainpart_height
       helper.subparts.each{ |part|
         break if part == self
@@ -33,8 +34,8 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
       false
     }
     last_motion_user = nil
-    helper.ssc(:motion_notify_event){ |_, x, y|
-      x && y or next
+    helper.ssc(:motion_notify_event){ |_, ev|
+      x, y = ev.x, ev.y
 
       if 0 != height
         tipset = ''
@@ -159,7 +160,8 @@ class ::Gdk::SubPartsVoter < Gdk::SubParts
 
   def user_icon(user)
     h = { width: icon_width, height: icon_height }
-    @user_icon[user[:id]] ||= user.icon.load_pixbuf(h) do
+    @user_icon[user[:id]] ||= user.icon.load_pixbuf(h) do |pb|
+      @user_icon[user[:id]] = pb
       helper.queue_draw
     end
   end

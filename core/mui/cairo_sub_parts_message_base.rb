@@ -198,9 +198,9 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
   # :nodoc:
   def render_messages
     if not helper.destroyed?
-      helper.on_modify
-      helper.reset_height
-      helper.ssc(:click) { |this, e, x, y|
+      helper.queue_allocate
+      helper.ssc(:clicked) { |_, ev|
+        x, y = ev.x, ev.y
         ofsty = helper.mainpart_height
         helper.subparts.each { |part|
           break if part == self

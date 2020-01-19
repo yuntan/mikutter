@@ -16,8 +16,9 @@ require 'mui/cairo_markup_generator'
 require 'mui/cairo_special_edge'
 require 'mui/gtk_photo_pixbuf'
 
-# Modelを表示するためのWidget。名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
-class Gdk::MiraclePainter < Gtk::Widget
+# Diva::Modelを表示するためのGtk::ListBoxRow。
+# 名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
+class Gdk::MiraclePainter < Gtk::ListBoxRow
 =begin rdoc
   * カスタムwidgetの実装
     https://developer.gnome.org/gtkmm-tutorial/stable/sec-custom-widgets.html.en
@@ -59,7 +60,7 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   type_register
 
-  signal_new(:click, GLib::Signal::RUN_FIRST, nil, nil, Gdk::EventButton)
+  signal_new :clicked, GLib::Signal::RUN_FIRST | GLib::Signal::ACTION, nil, nil, Gdk::EventButton
 
   # TODO: gtk3 remove
   # signal_new(:modified, GLib::Signal::RUN_FIRST, nil, nil)
@@ -80,9 +81,7 @@ class Gdk::MiraclePainter < Gtk::Widget
   NUMERONYM_MATCHER = /[a-zA-Z]{4,}/.freeze
   NUMERONYM_CONVERTER = ->(r) { "#{r[0]}#{r.size-2}#{r[-1]}" }
 
-  # TODO: gtk3 remove
-  # attr_reader :message, :p_message, :tree, :selected
-  attr_reader :model, :selected
+  attr_reader :model
   alias message model
   # TODO: gtk3 deprecate :message
   # deprecate :message, :model, 2019, 10
@@ -129,12 +128,37 @@ class Gdk::MiraclePainter < Gtk::Widget
     def init
       self.css_name = 'miraclepainter'
     end
+
+    # override virtual function Gtk::Widget.get_request_mode
+    def get_request_mode
+      notice 'MiraclePainter#request_mode' if VERBOSE
+
+      Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
+    end
+
+    # override virtual function Gtk::Widget.get_preferred_width
+    def get_preferred_width
+      notice 'MiraclePainter#preferred_width' if VERBOSE
+
+      [WIDTH_MIN, WIDTH_NAT]
+    end
+
+    # override virtual function Gtk::Widget.get_preferred_height_for_width
+    def get_preferred_height_for_width(width)
+      notice 'MiraclePainter#preferred_height_for_width(' \
+        "width = #{width})" if VERBOSE
+
+      @width = width
+      height = mainpart_height + SPACING + subparts_height
+      [height, height] # minimum, natural
+    end
   end
 
   def initialize(model)
     super()
 
     @model = model
+    @mouse_in_row = false
 
     # This widget create _Gdk::Window_ itself on _realize_.
     self.has_window = true
@@ -146,33 +170,6 @@ class Gdk::MiraclePainter < Gtk::Widget
     Plugin[:gtk3].score_of(model)
   end
 
-  # virtual function overrides
-  if true # rubocop:disable Lint/LiteralAsCondition
-    # override virtual function Gtk::Widget#request_mode
-    def request_mode
-      notice 'MiraclePainter#request_mode' if VERBOSE
-
-      Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
-    end
-
-    # override virtual function Gtk::Widget#preferred_width
-    def preferred_width
-      notice 'MiraclePainter#preferred_width' if VERBOSE
-
-      [WIDTH_MIN, WIDTH_NAT]
-    end
-
-    # override virtual function Gtk::Widget#preferred_height_for_width
-    def preferred_height_for_width(width)
-      notice 'MiraclePainter#preferred_height_for_width(' \
-        "width = #{width})" if VERBOSE
-
-      @width = width
-      height = mainpart_height + SPACING + subparts_height
-      [height, height] # minimum, natural
-    end
-  end
-
   # sockets
   if true # rubocop:disable Lint/LiteralAsCondition
 =begin
@@ -180,35 +177,44 @@ class Gdk::MiraclePainter < Gtk::Widget
   size_allocate > realize > draw
 =end
 
-    # リサイズ時に呼ばれる
-    def signal_do_size_allocate(rect)
-      notice 'MiraclePainter*size_allocate(' \
-        "rect = {x: #{rect.x}, y: #{rect.y}, width: #{rect.width}, " \
-        "height: #{rect.height}})" if VERBOSE
+    def signal_do_parent_set(prev_parent)
+      notice "\n#{self}*parent_set(prev_parent=#{prev_parent.inspect}) " \
+        "parent=#{parent.inspect}" if VERBOSE
 
-      @width = rect.width
+      @width = allocated_width
+      h = mainpart_height + SPACING + subparts_height
       # TODO gobject-introspectionでvirtual methodをoverride出来るようになったら
       # 下の一行を消す
-      set_size_request(-1, mainpart_height + SPACING + subparts_height)
+      set_size_request(-1, h)
+    end
+
+    # リサイズ時に呼ばれる
+    def signal_do_size_allocate(rect)
+      x, y, w, h = rect.x, rect.y, rect.width, rect.height
+      notice "\n#{self}*size_allocate(rect={x: #{rect.x}, y: #{y}, w: #{w}, h: #{h}})" if VERBOSE
+
+      @width = w
+      h = mainpart_height + SPACING + subparts_height
+      rect.height = h # HACK
       self.allocation = rect
-      window.move_resize rect.x, rect.y, rect.width, rect.height if window
+      window&.move_resize x, y, w, h # HACK
     end
 
     def signal_do_realize
-      notice 'MiraclePainter*realize' if VERBOSE
+      notice "\n#{self}*realize" if VERBOSE
 
-      w, h = allocation.width, allocation.height
+      x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
       attr = (Gdk::WindowAttr.new w, h, :input_output, :child).tap do |attr|
-        attr.x = allocation.x
-        attr.y = allocation.y
+        attr.x = x
+        attr.y = y
         attr.visual = visual
-        # attr.event_mask = events | Gdk::EventMask::EXPOSURE_MASK
         em = Gdk::EventMask
         attr.event_mask = em::BUTTON_PRESS_MASK |
                           em::BUTTON_RELEASE_MASK |
                           em::POINTER_MOTION_MASK |
+                          em::ENTER_NOTIFY_MASK |
                           em::LEAVE_NOTIFY_MASK |
-                          em::FOCUS_CHANGE_MASK
+                          em::TOUCH_MASK
       end
 
       wat = Gdk::WindowAttributesType
@@ -221,22 +227,24 @@ class Gdk::MiraclePainter < Gtk::Widget
     end
 
     def signal_do_unrealize
-      notice 'MiraclePainter*unrealize' if VERBOSE
+      notice "\n#{self}*unrealize" if VERBOSE
 
       unregister_window window
       window.destroy
       self.realized = false
     end
 
-    def signal_do_draw(ctx)
-      notice 'MiraclePainter*draw(ctx)' if VERBOSE
+    def signal_do_draw(context)
+      # context => Cairo::Context
+      notice "#{self}*draw(context)" if VERBOSE
 
-      render_to_context ctx
+      render_to_context context
       true # stop propagation
+      false
     end
 
-    def signal_do_click(ev)
-      notice 'MiraclePainter*click(ev)' if VERBOSE
+    def signal_do_clicked(ev)
+      notice "\n#{self}*click(ev=#{ev.inspect})" if VERBOSE
 
       x, y = ev.x, ev.y
       case ev.button
@@ -253,147 +261,64 @@ class Gdk::MiraclePainter < Gtk::Widget
           end
         end
       when 3
-        # @tree.get_ancestor(Gtk::Window).set_focus(@tree)
         Plugin::GUI::Command.menu_pop
       end
     end
 
     def signal_do_button_press_event(ev)
-      notice 'MiraclePainter*button_press_event(ev)' if VERBOSE
+      notice "\n#{self}*button_press_event(ev=#{ev.inspect})" if VERBOSE
 
       return false if ev.button != 1
       textselector_press(*main_pos_to_index_forclick(ev.x, ev.y)[1..2])
-      true # stop propagation
+      false # propagate event
     end
 
     def signal_do_button_release_event(ev)
-      notice 'MiraclePainter*button_release_event(ev)' if VERBOSE
+      notice "\n#{self}*button_release_event(ev=#{ev.inspect})" if VERBOSE
 
-      return false if ev.button != 1
       x, y = ev.x, ev.y
-      textselector_release(*main_pos_to_index_forclick(x, y)[1..2])
-      true # stop propagation
+      ev.button == 1 \
+        and textselector_release(*main_pos_to_index_forclick(x, y)[1..2])
+      @mouse_in_row || ev.event_type == Gdk::EventType::TOUCH_END \
+        and signal_emit :clicked, ev
+      false # propagate event
     end
 
     def signal_do_motion_notify_event(ev)
-      notice 'MiraclePainter*motion_notify_event(ev)' if VERBOSE
-
       x, y = ev.x, ev.y
       point_moved_main_icon(x, y)
       textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
 
       # change cursor shape
       window.cursor = Gdk::Cursor.new(cursor_name_of(x, y))
-      true # stop propagation
+      false # propagate event
+    end
+
+    def signal_do_enter_notify_event(_)
+      notice "\n#{self}*enter_notify_event(ev)" if VERBOSE
+
+      @mouse_in_row = true
+      false # propagate event
     end
 
     def signal_do_leave_notify_event(_)
-      notice 'MiraclePainter*leave_notify_event(ev)' if VERBOSE
+      notice "\n#{self}*leave_notify_event(ev)" if VERBOSE
 
+      @mouse_in_row = false
       iob_main_leave
-      # textselector_release
+      textselector_release
       # restore cursor shape
-      window.cursor = Gdk::Cursor.new('default')
-      true # stop propagation
+      window.cursor = nil
+      false # propagate event
     end
 
-    def signal_do_focus_in_event(_)
-      notice 'MiraclePainter*focus_in_event(ev)' if VERBOSE
+    def signal_do_state_flags_changed(prev_flags)
+      notice "\n#{self}*state_flags_changed(prev_flags=#{prev_flags.inspect}) " \
+        "state_flags=#{state_flags.inspect}" if VERBOSE
 
-      @selected = true
-      true # stop propagation
-    end
-
-    def signal_do_focus_out_event(_)
-      notice 'MiraclePainter*focus_out_event(ev)' if VERBOSE
-
-      @selected = false
-      textselector_unselect
-      true # stop propagation
+      (state_flags & Gtk::StateFlags::SELECTED).zero? and textselector_unselect
     end
   end
-
-=begin
-  def released(x=nil, y=nil)
-    if not destroyed?
-      if(x == y and not x)
-        unselect
-      else
-        textselector_release(*main_pos_to_index_forclick(x, y)[1..2]) end end end
-
-  # 座標 ( _x_ , _y_ ) にクリックイベントを発生させる
-  def clicked(x, y, event)
-    signal_emit(:click, event, x, y)
-    case event.button
-    when 1
-      iob_clicked(x, y)
-      if not textselector_range
-        index = main_pos_to_index(x, y)
-        if index
-          clicked_note = score.find{|note|
-            index -= note.description.size
-            index <= 0
-          }
-          Plugin.call(:open, clicked_note) if clickable?(clicked_note)
-        end
-      end
-    when 3
-      @tree.get_ancestor(Gtk::Window).set_focus(@tree)
-      Plugin::GUI::Command.menu_pop
-    end end
-
-  def on_selected
-    if not frozen?
-      @selected = true
-      on_modify end end
-
-  def on_unselected
-    if not frozen?
-      @selected = false
-      on_modify end end
-
-  # 座標 ( _x_ , _y_ ) にマウスオーバーイベントを発生させる
-  def point_moved(ev, x, y)
-    point_moved_main_icon(x, y)
-    signal_emit(:motion_notify_event, ev)
-    textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
-
-    # change cursor shape
-    set_cursor(cursor_name_of(x, y))
-  end
-
-  # leaveイベントを発生させる
-  def point_leaved(ev, x, y)
-    iob_main_leave
-    signal_emit(:leave_notify_event, ev)
-    # textselector_release
-
-    # restore cursor shape
-    set_cursor('default')
-  end
-
-  # _name_ に対応するマウスカーソルに変更する。
-  # ==== Args
-  # [name] カーソルの名前(String)
-  private def set_cursor(name)
-    window = @tree.get_ancestor Gtk::Window
-    type =
-      case name
-      when 'pointer'
-        Gdk::Cursor::HAND2
-      when 'text'
-        Gdk::Cursor::XTERM
-      else
-        Gdk::Cursor::LEFT_PTR
-      end
-    window.window.cursor = Gdk::Cursor.new(type)
-    self
-  end
-
-  # MiraclePainterが選択解除されたことを通知する
-  def unselect
-    textselector_unselect end
-=end
 
   def iob_icon_pixbuf
     [ ["reply.png".freeze, message.user.verified? ? "verified.png" : "etc.png"],
@@ -446,51 +371,6 @@ class Gdk::MiraclePainter < Gtk::Widget
     result[1] = main_message.text.get_index_from_byte(result[1])
     return *result end
 
-  # def signal_do_modified()
-  # end
-
-  # def signal_do_expose_event()
-  # end
-
-  # 更新イベントを発生させる
-  def on_modify(event=true)
-    if not destroyed?
-      @pixbuf = nil
-      @coordinate = nil
-      # signal_emit('modified') if event
-      event and signal_emit :draw
-    end
-  end
-
-=begin
-  # 画面上にこれが表示されているかを返す
-  def visible?
-    # TODO: gtk3, visible_rangeをgtk3 gemで定義する
-    # if tree
-    #   range = tree.visible_range
-    #   if range and 2 == range.size
-    #     Range.new(*range).cover?(tree.get_path_by_message(@message)) end end end
-    true
-  end
-
-  def destroy
-    def self.tree
-      raise DestroyedError.new end
-    def self.message
-      raise DestroyedError.new end
-    def self.p_message
-      raise DestroyedError.new end
-
-    instance_variables.each{ |v|
-      instance_variable_set(v, nil) }
-
-    @tree = nil
-    signal_emit('destroy')
-    super
-    freeze
-  end
-=end
-
   @@font_description = Hash.new{|h,k| h[k] = {} } # {scale => {font => FontDescription}}
   def font_description(font)
     @@font_description[Gdk.scale(0xffff)][font] ||=
@@ -499,10 +379,15 @@ class Gdk::MiraclePainter < Gtk::Widget
 
   def mainpart_height
     [
-      (main_message.size[1] + header_left.size[1]) / Pango::SCALE,
+      main_message.pixel_size[1] + header_left.pixel_size[1],
       ICON_SIZE[1],
     ].max + MARGIN
   end
+
+  def inspect
+    "#{self.class.name}(#{model.description[0, 5].gsub("\n", ' ').inspect})"
+  end
+  alias to_s inspect
 
 private
 
@@ -525,7 +410,7 @@ private
       ICON_SIZE[0] + 2 * MARGIN,
       MARGIN,
       @width - ICON_SIZE[0] - 4 * MARGIN,
-      header_left.size[1] / Pango::SCALE
+      header_left.pixel_size[1]
     )
   end
 
@@ -569,12 +454,13 @@ private
     color = Plugin.filtering(:message_header_left_font_color, message, nil).last
     color = BLACK if not(color and color.is_a? Array and 3 == color.size)
     font = Plugin.filtering(:message_header_left_font, message, nil).last
-    layout = context&.create_pango_layout || create_pango_layout
-    layout.attributes = attr_list
-    context.set_source_rgb(*color.map{ |c| c.to_f / 65536 }) if context
-    layout.font_description = font_description(font) if font
-    layout.text = text
-    layout end
+    context&.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
+    (context || self).create_pango_layout.tap do |layout|
+      layout.attributes = attr_list
+      layout.font_description = font_description(font) if font
+      layout.text = text
+    end
+  end
 
   def header_left_markup
     user = message.user
@@ -619,14 +505,18 @@ private
   # アイコンのpixbufを返す
   def main_icon
     w, h = ICON_SIZE
-    @main_icon ||= model.user.icon.load_pixbuf(width: w, height: h) do
+    @main_icon ||= model.user.icon.load_pixbuf(width: w, height: h) do |pb|
+      @main_icon = pb
       queue_draw
     end
   end
 
   # 背景色を返す
   def get_backgroundcolor
-    color = Plugin.filtering(:message_background_color, self, nil).last
+    color = Plugin.filtering(
+      selected? ? :message_selected_bg_color : :message_bg_color,
+      model, nil
+    ).last
     if color.is_a? Array and 3 == color.size
       color.map{ |c| c.to_f / 65536 }
     else
@@ -761,8 +651,4 @@ private
       }.first
     end
   end
-
-  class DestroyedError < Exception
-  end
-
 end
