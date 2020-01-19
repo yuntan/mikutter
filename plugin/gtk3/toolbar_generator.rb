@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-module Plugin::Gtk
+module Plugin::Gtk3
   module ToolbarGenerator
 
     # ツールバーに表示するボタンを _container_ にpackする。

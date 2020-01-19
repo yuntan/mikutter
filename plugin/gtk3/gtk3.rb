@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # RubyGnomeを用いてUIを表示するプラグイン
-#
 require 'gtk3'
 
 require 'mui/gtk_contextmenu'
@@ -30,7 +29,9 @@ require_relative 'tab_toolbar'
 require_relative 'slug_dictionary'
 
 Plugin.create :gtk3 do
-  @slug_dictionary = Plugin::Gtk::SlugDictionary.new # widget_type => {slug => Gtk}
+  pg = Plugin::Gtk3
+
+  @slug_dictionary = pg::SlugDictionary.new # widget_type => {slug => Gtk}
   @tabs_promise = {}                     # slug => Deferred
 
   TABPOS = [:top, :bottom, :left, :right].freeze
@@ -38,7 +39,7 @@ Plugin.create :gtk3 do
   # ウィンドウ作成。
   # PostBoxとか複数のペインを持つための処理が入るので、Gtk::MikutterWindowクラスを新設してそれを使う
   on_window_created do |i_window|
-    window = MikutterWindow.open i_window, self
+    window = pg::MikutterWindow.open i_window, self
     @parent = window
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
@@ -120,7 +121,7 @@ Plugin.create :gtk3 do
       i_pane.set_active_child(tab.i_tab, true)
     end
     pane.signal_connect(:page_added){ |this, tabcontainer, index|
-      type_strict tabcontainer => ::Gtk::TabContainer
+      type_strict tabcontainer => pg::TabContainer
       Plugin.call(:rewind_window_order, i_pane.parent) if i_pane.parent
       i_tab = tabcontainer.i_tab
       next false if i_tab.parent == i_pane
@@ -165,7 +166,7 @@ Plugin.create :gtk3 do
   # ==== Return
   # Tab(Gtk::EventBox)
   def create_tab(i_tab)
-    tab = ::Gtk::EventBox.new
+    tab = Gtk::EventBox.new
     tab.tooltip_text = i_tab.name
     tab.visible_window = false
     @slug_dictionary.add(i_tab, tab)
@@ -189,7 +190,7 @@ Plugin.create :gtk3 do
     tab.show_all end
 
   on_tab_toolbar_created do |i_tab_toolbar|
-    tab_toolbar = ::Gtk::TabToolbar.new(i_tab_toolbar).show_all
+    tab_toolbar = pg::TabToolbar.new(i_tab_toolbar).show_all
     @slug_dictionary.add(i_tab_toolbar, tab_toolbar)
   end
 
@@ -200,7 +201,7 @@ Plugin.create :gtk3 do
 
   # タイムライン作成。
   on_timeline_created do |i_timeline|
-    timeline = Plugin::Gtk::Timeline.new(i_timeline)
+    timeline = pg::Timeline.new(i_timeline)
     @slug_dictionary.add(i_timeline, timeline)
     timeline.listbox.ssc(key_press_event: timeline_key_press_event(i_timeline),
                          focus_in_event:  timeline_focus_in_event(i_timeline),
@@ -534,7 +535,7 @@ Plugin.create :gtk3 do
     [widgetof(i_widget)] end
 
   on_gui_dialog do |plugin, title, default, proc, promise|
-    Plugin::Gtk::Dialog.open(plugin: plugin,
+    pg::Dialog.open(plugin: plugin,
                              title: title,
                              default: default,
                              promise: promise,
@@ -575,8 +576,8 @@ Plugin.create :gtk3 do
         widget.vexpand = i_tab.pack_rule[container.children.size]
         return container.add(widget) end end
     if tab.parent
-      raise Plugin::Gtk::GtkError, "Gtk Widget #{tab.inspect} of Tab(#{i_tab.slug.inspect}) has parent Gtk Widget #{tab.parent.inspect}" end
-    container = ::Gtk::TabContainer.new(i_tab).show_all
+      raise Plugin::Gtk3::GtkError, "Gtk Widget #{tab.inspect} of Tab(#{i_tab.slug.inspect}) has parent Gtk Widget #{tab.parent.inspect}" end
+    container = Plugin::Gtk3::TabContainer.new(i_tab).show_all
     container.ssc(:key_press_event){ |w, event|
       Plugin::GUI.keypress(::Gtk::keyname([event.keyval ,event.state]), i_tab) }
     widget.vexpand = i_tab.pack_rule[container.children.size]
@@ -620,7 +621,7 @@ Plugin.create :gtk3 do
   # ==== Return
   # ペイン(Gtk::Notebook)
   def create_pane(i_pane)
-    pane = ::Gtk::Notebook.new
+    pane = Gtk::Notebook.new
     @slug_dictionary.add(i_pane, pane)
     pane.ssc('key_press_event'){ |widget, event|
       Plugin::GUI.keypress(::Gtk::keyname([event.keyval ,event.state]), i_pane) }
@@ -706,6 +707,6 @@ Plugin.create :gtk3 do
 
 end
 
-module Plugin::Gtk
+module Plugin::Gtk3
   class GtkError < Exception
   end end

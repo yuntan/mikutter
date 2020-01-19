@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require 'gtk3'
-
-class Gtk::WorldShifter < Gtk::EventBox
+class Plugin::Gtk3::WorldShifter < Gtk::EventBox
   UserConfig[:gtk_accountbox_geometry] ||= 32
 
   def initialize

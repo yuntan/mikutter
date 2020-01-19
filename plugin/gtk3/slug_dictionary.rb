@@ -2,7 +2,7 @@
 
 require_relative 'tab_toolbar'
 
-module Plugin::Gtk
+module Plugin::Gtk3
   class SlugDictionary
     class << self
       # 名前に対するGtkクラスのハッシュを返す
@@ -22,16 +22,16 @@ module Plugin::Gtk
     register_widget Plugin::GUI::Window,         ::Gtk::Window
     register_widget Plugin::GUI::Pane,           ::Gtk::Notebook
     register_widget Plugin::GUI::Tab,            ::Gtk::EventBox
-    register_widget Plugin::GUI::TabToolbar,     ::Gtk::TabToolbar
-    register_widget Plugin::GUI::Timeline,       ::Plugin::Gtk::Timeline
+    register_widget Plugin::GUI::TabToolbar,     TabToolbar
+    register_widget Plugin::GUI::Timeline,       Timeline
     register_widget Plugin::GUI::Cluster,        ::Gtk::Notebook
     register_widget Plugin::GUI::Fragment,       ::Gtk::EventBox
-    register_widget Plugin::GUI::TabChildWidget, ::Gtk::TabContainer
+    register_widget Plugin::GUI::TabChildWidget, TabContainer
     register_widget Plugin::GUI::Postbox,        ::Gtk::PostBox
 
     def initialize
       @widget_of_gtk = Hash.new{|h, k|
-        if Plugin::Gtk::SlugDictionary.nameklass.has_key?(k)
+        if self.class.nameklass.has_key?(k)
           h[k] = {}
         else
           raise UndefinedWidgetError, "widget type `#{k}' does not exists" end } end
@@ -82,7 +82,7 @@ module Plugin::Gtk
     # 対応するウィジェット、または存在しない場合はnil
     def imaginally_by_gtk(gtk_widget)
       type_strict gtk_widget => ::Gtk::Widget
-      Plugin::Gtk::SlugDictionary.nameklass.each{ |i_widget_klass, gtk_widget_klass|
+      self.class.nameklass.each{ |i_widget_klass, gtk_widget_klass|
         if gtk_widget.is_a? gtk_widget_klass
           next if not i_widget_klass
           slug = @widget_of_gtk[i_widget_klass].key(gtk_widget)

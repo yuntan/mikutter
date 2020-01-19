@@ -12,13 +12,11 @@ require 'mui/gtk_photo_pixbuf'
 
 # Diva::Modelを表示するためのGtk::ListBoxRow。
 # 名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
-class Gdk::MiraclePainter < Gtk::ListBoxRow
-=begin rdoc
-  * カスタムwidgetの実装
-    https://developer.gnome.org/gtkmm-tutorial/stable/sec-custom-widgets.html.en
-  * height-for-widthの実装
-    https://developer.gnome.org/gtk3/stable/GtkWidget.html#GtkWidget.description
-=end
+class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
+  # * カスタムwidgetの実装
+  #   https://developer.gnome.org/gtkmm-tutorial/stable/sec-custom-widgets.html.en
+  # * height-for-widthの実装
+  #   https://developer.gnome.org/gtk3/stable/GtkWidget.html#GtkWidget.description
 
   class Rect
     extend Memoist
@@ -55,20 +53,11 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
 
   signal_new :clicked, GLib::Signal::RUN_FIRST | GLib::Signal::ACTION, nil, nil, Gdk::EventButton
 
-  # TODO: gtk3 remove
-  # signal_new(:modified, GLib::Signal::RUN_FIRST, nil, nil)
-  # signal_new(:expose_event, GLib::Signal::RUN_FIRST, nil, nil)
-
-  # TODO: gtk3 remove
-  # include Gdk::Coordinate
   include Gdk::IconOverButton
   include Gdk::TextSelector
   include Gdk::SubPartsHelper
   include Gdk::MarkupGenerator
 
-  # TODO: gtk3 remove
-  # EMPTY = Set.new.freeze
-  # Event = Struct.new(:event, :message, :timeline, :miraclepainter)
   WHITE = ([0xffff]*3).freeze
   BLACK = [0, 0, 0].freeze
   NUMERONYM_MATCHER = /[a-zA-Z]{4,}/.freeze
@@ -374,7 +363,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
   end
 
   def inspect
-    "#{self.class.name}(#{model.description[0, 5].gsub("\n", ' ').inspect})"
+    "MP(#{model.description[0, 5].gsub("\n", ' ').inspect})"
   end
   alias to_s inspect
 
@@ -582,9 +571,9 @@ private
       hr_color = BLACK if not(hr_color and hr_color.is_a? Array and 3 == hr_color.size)
 
       @hl_region = Cairo::Region.new([header_text_rect.x, header_text_rect.y,
-                                        hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE])
+                                      hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE])
       @hr_region = Cairo::Region.new([header_text_rect.x + header_text_rect.width - (hr_layout.size[0] / Pango::SCALE), header_text_rect.y,
-                                        hr_layout.size[0] / Pango::SCALE, hr_layout.size[1] / Pango::SCALE])
+                                      hr_layout.size[0] / Pango::SCALE, hr_layout.size[1] / Pango::SCALE])
 
       context.save{
         context.translate(header_text_rect.width - (hr_layout.size[0] / Pango::SCALE), 0)

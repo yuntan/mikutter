@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require "gtk3"
-
-class Gtk::AccountBox < Gtk::EventBox
+class Plugin::Gtk3::AccountBox < Gtk::EventBox
   UserConfig[:gtk_accountbox_geometry] ||= 32
 
   def initialize

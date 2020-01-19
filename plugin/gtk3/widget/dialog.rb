@@ -4,7 +4,7 @@ require 'mui/gtk_form_dsl'
 require 'mui/gtk_form_dsl_multi_select'
 require 'mui/gtk_form_dsl_select'
 
-module Plugin::Gtk
+module Plugin::Gtk3
   module Dialog
     # ダイアログを開く。このメソッドを直接利用せずに、Pluginのdialog DSLを利用すること。
     # ==== Args

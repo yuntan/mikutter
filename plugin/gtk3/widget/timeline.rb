@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
-require 'gtk3'
-
 require 'mui/gtk_postbox'
 
-module Plugin::Gtk
+module Plugin::Gtk3
 =begin rdoc
   投稿ボックスとスクロール可能のリストビューを備えたウィジェット
 =end
@@ -116,7 +114,7 @@ module Plugin::Gtk
       row = @hash[model.uri.hash]
       row and @listbox.remove row
 
-      row = ::Gdk::MiraclePainter.new model
+      row = MiraclePainter.new model
       row.show_all
       @listbox.add row
       @hash[model.uri.hash] = row

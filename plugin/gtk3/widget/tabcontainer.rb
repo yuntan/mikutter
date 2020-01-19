@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-require "gtk3"
 
-class Gtk::TabContainer < Gtk::Grid
+class Plugin::Gtk3::TabContainer < Gtk::Grid
   attr_reader :i_tab
 
   def initialize(tab)
