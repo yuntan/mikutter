@@ -277,11 +277,6 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
     else
       (result / pango_layout.line_count) * text_max_line_count(message) + pango_layout.spacing/Pango::SCALE * 2 end end
 
-  def emoji_height
-    default_font.forecast_font_size
-  end
-  deprecate :emoji_height, "Pango::FontDescription#forecast_font_size", 2020, 6
-
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
   def header_left(message, context=nil)
     text, font, attr_list = header_left_content(message)
@@ -461,8 +456,11 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
       end_index = start_index + note.description.bytesize
       if UserConfig[:miraclepainter_expand_custom_emoji] && note.respond_to?(:inline_photo)
         end_index += -note.description.bytesize + 1
-        wh = default_font.forecast_font_size * Pango::SCALE
-        rect = Pango::Rectangle.new(0, 0, wh, wh)
+        size = helper.create_pango_layout.tap do |layout|
+          layout.font_description = default_font
+          layout.text = '.'
+        end.size[1]
+        rect = Pango::Rectangle.new(0, 0, size, size)
         shape = Pango::AttrShape.new(rect, rect, note.inline_photo)
         shape.start_index = start_index
         shape.end_index = end_index

@@ -310,18 +310,6 @@ class Gtk::Notebook
   end
 end
 
-class Pango::Layout
-  # 絵文字を描画する時の一辺の大きさを返す
-  # ==== Return
-  # [Integer] 高さ(px)
-  def forecast_font_size
-    @forecast_font_size ||= begin
-                              text = '.'
-                              pixel_size[1]
-                            end
-  end
-end
-
 class Gtk::ListStore
   def model
     self end
