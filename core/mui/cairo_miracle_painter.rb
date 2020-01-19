@@ -178,7 +178,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
 =end
 
     def signal_do_parent_set(prev_parent)
-      notice "\n#{self}*parent_set(prev_parent=#{prev_parent.inspect}) " \
+      notice "#{self}*parent_set(prev_parent=#{prev_parent.inspect}) " \
         "parent=#{parent.inspect}" if VERBOSE
 
       @width = allocated_width
@@ -191,7 +191,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     # リサイズ時に呼ばれる
     def signal_do_size_allocate(rect)
       x, y, w, h = rect.x, rect.y, rect.width, rect.height
-      notice "\n#{self}*size_allocate(rect={x: #{rect.x}, y: #{y}, w: #{w}, h: #{h}})" if VERBOSE
+      notice "#{self}*size_allocate(rect={x: #{rect.x}, y: #{y}, w: #{w}, h: #{h}})" if VERBOSE
 
       @width = w
       h = mainpart_height + SPACING + subparts_height
@@ -201,7 +201,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_realize
-      notice "\n#{self}*realize" if VERBOSE
+      notice "#{self}*realize" if VERBOSE
 
       x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
       attr = (Gdk::WindowAttr.new w, h, :input_output, :child).tap do |attr|
@@ -227,7 +227,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_unrealize
-      notice "\n#{self}*unrealize" if VERBOSE
+      notice "#{self}*unrealize" if VERBOSE
 
       unregister_window window
       window.destroy
@@ -244,7 +244,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_clicked(ev)
-      notice "\n#{self}*click(ev=#{ev.inspect})" if VERBOSE
+      notice "#{self}*click(ev=#{ev.inspect})" if VERBOSE
 
       x, y = ev.x, ev.y
       case ev.button
@@ -266,7 +266,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_button_press_event(ev)
-      notice "\n#{self}*button_press_event(ev=#{ev.inspect})" if VERBOSE
+      notice "#{self}*button_press_event(ev=#{ev.inspect})" if VERBOSE
 
       return false if ev.button != 1
       textselector_press(*main_pos_to_index_forclick(ev.x, ev.y)[1..2])
@@ -274,7 +274,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_button_release_event(ev)
-      notice "\n#{self}*button_release_event(ev=#{ev.inspect})" if VERBOSE
+      notice "#{self}*button_release_event(ev=#{ev.inspect})" if VERBOSE
 
       x, y = ev.x, ev.y
       ev.button == 1 \
@@ -295,15 +295,11 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_enter_notify_event(_)
-      notice "\n#{self}*enter_notify_event(ev)" if VERBOSE
-
       @mouse_in_row = true
       false # propagate event
     end
 
     def signal_do_leave_notify_event(_)
-      notice "\n#{self}*leave_notify_event(ev)" if VERBOSE
-
       @mouse_in_row = false
       iob_main_leave
       textselector_release
@@ -313,7 +309,7 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     end
 
     def signal_do_state_flags_changed(prev_flags)
-      notice "\n#{self}*state_flags_changed(prev_flags=#{prev_flags.inspect}) " \
+      notice "#{self}*state_flags_changed(prev_flags=#{prev_flags.inspect}) " \
         "state_flags=#{state_flags.inspect}" if VERBOSE
 
       (state_flags & Gtk::StateFlags::SELECTED).zero? and textselector_unselect
