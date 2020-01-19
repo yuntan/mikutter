@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-require 'gtk3'
 require_relative '../utils'
 require 'mui/gtk_crud'
+require 'mui/gtk_tree_view_pretty_scroll'
 
 =begin rdoc
   複数選択ウィジェットを作成する。

@@ -3,7 +3,6 @@
 require 'gtk3'
 
 require 'mui/gtk_postbox'
-require 'mui/cairo_miracle_painter'
 
 module Plugin::Gtk
 =begin rdoc

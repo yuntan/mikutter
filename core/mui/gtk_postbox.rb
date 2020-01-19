@@ -6,7 +6,6 @@
 
 require 'gtk3'
 require 'thread'
-require 'mui/cairo_miracle_painter'
 require 'mui/gtk_intelligent_textview'
 
 module Gtk

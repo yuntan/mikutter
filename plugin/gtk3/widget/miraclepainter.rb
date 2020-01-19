@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-
-require 'gtk3'
-require 'cairo'
-
-# TODO: gtk3 remove
-# require 'mui/cairo_coordinate_module'
 require 'mui/cairo_icon_over_button'
 require 'mui/cairo_textselector'
 require 'mui/cairo_sub_parts_helper'
@@ -26,7 +20,6 @@ class Gdk::MiraclePainter < Gtk::ListBoxRow
     https://developer.gnome.org/gtk3/stable/GtkWidget.html#GtkWidget.description
 =end
 
-  # TODO: gtk3 separete Rect class to another file
   class Rect
     extend Memoist
     attr_reader :x, :y, :width, :height

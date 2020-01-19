@@ -1,20 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # RubyGnomeを用いてUIを表示するプラグイン
+#
+require 'gtk3'
 
-require 'mui/cairo_cell_renderer_message'
-require 'mui/cairo_coordinate_module'
-require 'mui/cairo_icon_over_button'
-require 'mui/cairo_inner_tl'
-require 'mui/cairo_markup_generator'
-require 'mui/cairo_miracle_painter'
-require 'mui/cairo_replyviewer'
-require 'mui/cairo_sub_parts_favorite'
-require 'mui/cairo_sub_parts_helper'
-require 'mui/cairo_sub_parts_share'
-require 'mui/cairo_sub_parts_voter'
-require 'mui/cairo_textselector'
-require 'mui/cairo_timeline'
 require 'mui/gtk_contextmenu'
 require 'mui/gtk_crud'
 require 'mui/gtk_extension'
@@ -30,6 +19,7 @@ require 'mui/gtk_userlist'
 require 'mui/gtk_webicon'
 
 require_relative 'widget/timeline'
+require_relative 'widget/miraclepainter'
 require_relative 'widget/dialog'
 require_relative 'widget/tabcontainer'
 
@@ -38,8 +28,6 @@ require_relative 'mainloop'
 require_relative 'mikutter_window'
 require_relative 'tab_toolbar'
 require_relative 'slug_dictionary'
-
-require "gtk3"
 
 Plugin.create :gtk3 do
   @slug_dictionary = Plugin::Gtk::SlugDictionary.new # widget_type => {slug => Gtk}

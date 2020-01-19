@@ -224,7 +224,7 @@ class Gtk::Widget
 
 end
 
-class Gtk::Box < Gtk::Container
+class Gtk::Box
   extend Gem::Deprecate
 
   # _widget_ を詰めて配置する。closeupで配置されたウィジェットは無理に親の幅に合わせられることがない。
