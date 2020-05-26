@@ -44,8 +44,7 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
   MARGIN = 2 # margin for icon, etc
   SPACING = 2 # spacing between mainparts and subparts
   DEPTH = Gdk::Visual.system.depth # color depth
-  # TODO: gtk3 VERBOSE off
-  VERBOSE = true # for debug
+  VERBOSE = false # for debug
 
   extend Gem::Deprecate
 
@@ -106,36 +105,6 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
       false } end
 =end
 
-  class << self
-    def init
-      self.css_name = 'miraclepainter'
-    end
-
-    # override virtual function Gtk::Widget.get_request_mode
-    def get_request_mode
-      notice 'MiraclePainter#request_mode' if VERBOSE
-
-      Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
-    end
-
-    # override virtual function Gtk::Widget.get_preferred_width
-    def get_preferred_width
-      notice 'MiraclePainter#preferred_width' if VERBOSE
-
-      [WIDTH_MIN, WIDTH_NAT]
-    end
-
-    # override virtual function Gtk::Widget.get_preferred_height_for_width
-    def get_preferred_height_for_width(width)
-      notice 'MiraclePainter#preferred_height_for_width(' \
-        "width = #{width})" if VERBOSE
-
-      @width = width
-      height = mainpart_height + SPACING + subparts_height
-      [height, height] # minimum, natural
-    end
-  end
-
   def initialize(model)
     super()
 
@@ -145,157 +114,192 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
     # This widget create _Gdk::Window_ itself on _realize_.
     self.has_window = true
     self.redraw_on_allocate = true
+    style_context.add_class 'miraclepainter'
+  end
+
+  # override virtual function Gtk::Widget.get_request_mode
+  def do_get_request_mode
+    notice 'MiraclePainter#get_request_mode' if VERBOSE
+
+    Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
+  end
+
+  # override virtual function Gtk::Widget.get_preferred_width
+  def do_get_preferred_width
+    notice 'MiraclePainter#get_preferred_width' if VERBOSE
+
+    [WIDTH_MIN, WIDTH_NAT]
+  end
+
+  # override virtual function Gtk::Widget.get_preferred_height_for_width
+  def do_get_preferred_height_for_width(width)
+    notice 'MiraclePainter#get_preferred_height_for_width(' \
+      "width=#{width})" if VERBOSE
+
+    @width = width
+    height = mainpart_height + SPACING + subparts_height
+    [height, height] # minimum, natural
+  end
+
+  # connect signal Gtk::Widget*parent_set
+  def signal_do_parent_set(prev_parent)
+    notice "#{self}*parent_set(prev_parent=#{prev_parent.inspect}) " \
+      "parent=#{parent.inspect}" if VERBOSE
+
+    @width = allocated_width
+  end
+
+  # connect signal Gtk::Widget*size_allocate
+  # リサイズ時に呼ばれる
+  # signalの発行順序: size_allocate > realize > draw
+  def signal_do_size_allocate(rect)
+    notice "#{self}*size_allocate(rect=#{rect})" if VERBOSE
+
+    self.allocation = rect
+    x, y, w, h = rect.x, rect.y, rect.width, rect.height
+    realized? and window.move_resize x, y, w, h
+    @width = w
+  end
+
+  # connect signal Gtk::Widget*realize
+  def signal_do_realize
+    notice "#{self}*realize" if VERBOSE
+
+    x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
+    attr = (Gdk::WindowAttr.new w, h, :input_output, :child).tap do |attr|
+      attr.x = x
+      attr.y = y
+      attr.visual = visual
+      em = Gdk::EventMask
+      attr.event_mask = em::BUTTON_PRESS_MASK |
+        em::BUTTON_RELEASE_MASK |
+        em::POINTER_MOTION_MASK |
+        em::ENTER_NOTIFY_MASK |
+        em::LEAVE_NOTIFY_MASK |
+        em::TOUCH_MASK
+    end
+
+    wat = Gdk::WindowAttributesType
+    mask = wat::X | wat::Y | wat::VISUAL
+
+    self.window = Gdk::Window.new parent_window, attr, mask
+    register_window window
+
+    self.realized = true
+  end
+
+  # connect signal Gtk::Widget*unrealize
+  def signal_do_unrealize
+    notice "#{self}*unrealize" if VERBOSE
+
+    unregister_window window
+    window.destroy
+    self.realized = false
+  end
+
+  # connect signal Gtk::Widget*map
+  def singla_do_map
+    super
+
+    window.show
+  end
+
+  # connect signal Gtk::Widget*unmap
+  def signal_do_unmap
+    super
+
+    window.hide
+  end
+
+  # connect signal Gtk::Widget*draw
+  def signal_do_draw(context)
+    # context => Cairo::Context
+    notice "#{self}*draw(context)" if VERBOSE
+
+    x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
+
+    Gtk.render_frame style_context, context, x, y, w, h
+    Gtk.render_background style_context, context, x, y, w, h
+
+    render_to_context context
+  end
+
+  # connect signal Gtk::Widget*clicked
+  def signal_do_clicked(ev)
+    notice "#{self}*clicked(ev=#{ev.inspect})" if VERBOSE
+
+    x, y = ev.x, ev.y
+    case ev.button
+    when 1
+      iob_clicked(x, y)
+      if not textselector_range
+        index = main_pos_to_index(x, y)
+        if index
+          clicked_note = score.find{|note|
+            index -= note.description.size
+            index <= 0
+          }
+          Plugin.call(:open, clicked_note) if clickable?(clicked_note)
+        end
+      end
+    when 3
+      Plugin::GUI::Command.menu_pop
+    end
+  end
+
+  def signal_do_button_press_event(ev)
+    notice "#{self}*button_press_event(ev=#{ev.inspect})" if VERBOSE
+
+    return false if ev.button != 1
+    textselector_press(*main_pos_to_index_forclick(ev.x, ev.y)[1..2])
+    false # propagate event
+  end
+
+  def signal_do_button_release_event(ev)
+    notice "#{self}*button_release_event(ev=#{ev.inspect})" if VERBOSE
+
+    x, y = ev.x, ev.y
+    ev.button == 1 \
+      and textselector_release(*main_pos_to_index_forclick(x, y)[1..2])
+    @mouse_in_row || ev.event_type == Gdk::EventType::TOUCH_END \
+      and signal_emit :clicked, ev
+    false # propagate event
+  end
+
+  def signal_do_motion_notify_event(ev)
+    x, y = ev.x, ev.y
+    point_moved_main_icon(x, y)
+    textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
+
+    # change cursor shape
+    window.cursor = Gdk::Cursor.new(cursor_name_of(x, y))
+    false # propagate event
+  end
+
+  def signal_do_enter_notify_event(_)
+    @mouse_in_row = true
+    false # propagate event
+  end
+
+  def signal_do_leave_notify_event(_)
+    @mouse_in_row = false
+    iob_main_leave
+    textselector_release
+    # restore cursor shape
+    window.cursor = nil
+    false # propagate event
+  end
+
+  def signal_do_state_flags_changed(prev_flags)
+    notice "#{self}*state_flags_changed(prev_flags=#{prev_flags.inspect}) " \
+      "state_flags=#{state_flags.inspect}" if VERBOSE
+
+    (state_flags & Gtk::StateFlags::SELECTED).zero? and textselector_unselect
   end
 
   # :nodoc:
   memoize def score
     Plugin[:gtk3].score_of(model)
-  end
-
-  # sockets
-  if true # rubocop:disable Lint/LiteralAsCondition
-=begin
-  signalの発行順序
-  size_allocate > realize > draw
-=end
-
-    def signal_do_parent_set(prev_parent)
-      notice "#{self}*parent_set(prev_parent=#{prev_parent.inspect}) " \
-        "parent=#{parent.inspect}" if VERBOSE
-
-      @width = allocated_width
-      h = mainpart_height + SPACING + subparts_height
-      # TODO gobject-introspectionでvirtual methodをoverride出来るようになったら
-      # 下の一行を消す
-      set_size_request(-1, h)
-    end
-
-    # リサイズ時に呼ばれる
-    def signal_do_size_allocate(rect)
-      x, y, w, h = rect.x, rect.y, rect.width, rect.height
-      notice "#{self}*size_allocate(rect={x: #{rect.x}, y: #{y}, w: #{w}, h: #{h}})" if VERBOSE
-
-      @width = w
-      h = mainpart_height + SPACING + subparts_height
-      rect.height = h # HACK
-      self.allocation = rect
-      window&.move_resize x, y, w, h # HACK
-    end
-
-    def signal_do_realize
-      notice "#{self}*realize" if VERBOSE
-
-      x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
-      attr = (Gdk::WindowAttr.new w, h, :input_output, :child).tap do |attr|
-        attr.x = x
-        attr.y = y
-        attr.visual = visual
-        em = Gdk::EventMask
-        attr.event_mask = em::BUTTON_PRESS_MASK |
-                          em::BUTTON_RELEASE_MASK |
-                          em::POINTER_MOTION_MASK |
-                          em::ENTER_NOTIFY_MASK |
-                          em::LEAVE_NOTIFY_MASK |
-                          em::TOUCH_MASK
-      end
-
-      wat = Gdk::WindowAttributesType
-      mask = wat::X | wat::Y | wat::VISUAL
-      window = Gdk::Window.new parent_window, attr, mask
-
-      self.window = window
-      register_window window
-      self.realized = true
-    end
-
-    def signal_do_unrealize
-      notice "#{self}*unrealize" if VERBOSE
-
-      unregister_window window
-      window.destroy
-      self.realized = false
-    end
-
-    def signal_do_draw(context)
-      # context => Cairo::Context
-      notice "#{self}*draw(context)" if VERBOSE
-
-      render_to_context context
-      true # stop propagation
-      false
-    end
-
-    def signal_do_clicked(ev)
-      notice "#{self}*click(ev=#{ev.inspect})" if VERBOSE
-
-      x, y = ev.x, ev.y
-      case ev.button
-      when 1
-        iob_clicked(x, y)
-        if not textselector_range
-          index = main_pos_to_index(x, y)
-          if index
-            clicked_note = score.find{|note|
-              index -= note.description.size
-              index <= 0
-            }
-            Plugin.call(:open, clicked_note) if clickable?(clicked_note)
-          end
-        end
-      when 3
-        Plugin::GUI::Command.menu_pop
-      end
-    end
-
-    def signal_do_button_press_event(ev)
-      notice "#{self}*button_press_event(ev=#{ev.inspect})" if VERBOSE
-
-      return false if ev.button != 1
-      textselector_press(*main_pos_to_index_forclick(ev.x, ev.y)[1..2])
-      false # propagate event
-    end
-
-    def signal_do_button_release_event(ev)
-      notice "#{self}*button_release_event(ev=#{ev.inspect})" if VERBOSE
-
-      x, y = ev.x, ev.y
-      ev.button == 1 \
-        and textselector_release(*main_pos_to_index_forclick(x, y)[1..2])
-      @mouse_in_row || ev.event_type == Gdk::EventType::TOUCH_END \
-        and signal_emit :clicked, ev
-      false # propagate event
-    end
-
-    def signal_do_motion_notify_event(ev)
-      x, y = ev.x, ev.y
-      point_moved_main_icon(x, y)
-      textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
-
-      # change cursor shape
-      window.cursor = Gdk::Cursor.new(cursor_name_of(x, y))
-      false # propagate event
-    end
-
-    def signal_do_enter_notify_event(_)
-      @mouse_in_row = true
-      false # propagate event
-    end
-
-    def signal_do_leave_notify_event(_)
-      @mouse_in_row = false
-      iob_main_leave
-      textselector_release
-      # restore cursor shape
-      window.cursor = nil
-      false # propagate event
-    end
-
-    def signal_do_state_flags_changed(prev_flags)
-      notice "#{self}*state_flags_changed(prev_flags=#{prev_flags.inspect}) " \
-        "state_flags=#{state_flags.inspect}" if VERBOSE
-
-      (state_flags & Gtk::StateFlags::SELECTED).zero? and textselector_unselect
-    end
   end
 
   def iob_icon_pixbuf

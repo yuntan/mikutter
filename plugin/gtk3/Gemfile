@@ -1,3 +1,5 @@
 source 'https://rubygems.org'
 
-gem 'gtk3', '3.4.1'
+git 'https://github.com/yuntan/ruby-gnome', branch: 'hook-up-vfunc' do
+  gem 'gtk3'
+end
