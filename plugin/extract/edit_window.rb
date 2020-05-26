@@ -4,6 +4,7 @@ require 'mui/gtk_hierarchycal_selectbox'
 
 require_relative 'model/setting'
 require_relative 'option_widget'
+require_relative 'datasource_select_box'
 
 require 'observer'
 
@@ -65,10 +66,9 @@ class  Plugin::Extract::EditWindow < Gtk::Window
     @extract.icon end
 
   def source_widget
-    datasources = (Plugin.filtering(:extract_datasources, {}) || [{}]).first.map do |id, source_name|
-      [id, source_name.is_a?(String) ? source_name.split('/'.freeze) : source_name] end
-    datasources_box = Gtk::HierarchycalSelectBox.new(datasources, sources){
-      modify_value sources: datasources_box.selected.to_a }
+    datasources_box = Plugin::Extract::DatasourceSelectBox.new(sources) do
+      modify_value(sources: datasources_box.selected.to_a)
+    end
     @source_widget ||= Gtk::ScrolledWindow.new.add datasources_box
   end
 
@@ -94,7 +94,7 @@ class  Plugin::Extract::EditWindow < Gtk::Window
                  }
         boolean _('ポップアップ'), :popup
       end
-      select(_('並び順'), :order, Hash[Plugin.filtering(:extract_order, []).first.map{|o| [o.slug.to_s, o.name] }])
+      select(_('並び順'), :order, Hash[Plugin.collect(:extract_order).map{|o| [o.slug.to_s, o.name] }])
     end
   end
 

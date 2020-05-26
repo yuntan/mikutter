@@ -52,7 +52,7 @@ module Plugin::Gtk3
       if options[:delegate_other]
         i_window = i_postbox.ancestor_of(Plugin::GUI::Window)
         options[:delegate_other] = postbox_delegation_generator(i_window) end
-      postbox = Gtk::PostBox.new(options)
+      postbox = Gtk::PostBox.new(**options)
       @postboxes.add postbox
       set_focus(postbox.post) unless options[:delegated_by]
       postbox.no_show_all = false
@@ -96,7 +96,7 @@ module Plugin::Gtk3
       when :always
         true
       when :auto
-        !!Enumerator.new{|y| Plugin.filtering(:worlds, y) }.first
+        !!Plugin.collect(:worlds).first
       else
         false
       end

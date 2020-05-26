@@ -54,13 +54,11 @@ module Gdk::MarkupGenerator
   end
 
   def clickable?(model)
-    has_model_intent = Enumerator.new {|y| Plugin.filtering(:intent_select_by_model_slug, model.class.slug, y) }.first
+    has_model_intent = Plugin.collect(:intent_select_by_model_slug, model.class.slug, Pluggaloid::COLLECT).first
     return true if has_model_intent
-    Enumerator.new {|y|
-      Plugin.filtering(:model_of_uri, model.uri, y)
-    }.any?{|model_slug|
-      Enumerator.new {|y| Plugin.filtering(:intent_select_by_model_slug, model_slug, y) }.first
-    }
+    Plugin.collect(:model_of_uri, model.uri).any? do |model_slug|
+      Plugin.collect(:intent_select_by_model_slug, model_slug, Pluggaloid::COLLECT).first
+    end
   end
 
   # Entityを適用したあとのプレーンテキストを返す。
@@ -69,8 +67,8 @@ module Gdk::MarkupGenerator
     _plain_description[UserConfig[:miraclepainter_expand_custom_emoji]]
   end
 
-  private memoize def _plain_description
-    Hash.new do |h, expand_emoji|
+  private def _plain_description
+    @_plain_description ||= Hash.new do |h, expand_emoji|
       h[expand_emoji] = score.map{|note|
         if expand_emoji && note.respond_to?(:inline_photo)
           '.'

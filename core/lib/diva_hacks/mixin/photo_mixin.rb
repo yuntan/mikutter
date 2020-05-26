@@ -129,8 +129,10 @@ module Diva::Model::PhotoMixin
   end
 
   def download_routine
-    open(uri.scheme == 'file' ? uri.path : uri.to_s) do |is|
-      download_mainloop(is)
+    if uri.scheme == 'file'
+      File.open(uri.path, &method(:download_mainloop))
+    else
+      URI.open(uri.to_s, &method(:download_mainloop))
     end
   rescue EOFError
     true
@@ -194,7 +196,7 @@ module Diva::Model::PhotoMixin
   # 既に動いているタイマーがあればそれをキャンセルする。
   def set_forget_timer
     @forget.cancel if @forget
-    @forget = Reserver.new(forget_time, thread: SerialThread){ forget! }
+    @forget = Delayer.new(:destroy_cache, delay: forget_time){ forget! }
   end
 
   # 覚えておりません

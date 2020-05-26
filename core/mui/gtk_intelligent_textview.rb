@@ -26,8 +26,8 @@ class Gtk::IntelligentTextview < Gtk::TextView
   def self.addlinkrule(reg, leftclick, rightclick=nil)
     @@linkrule = MIKU::Cons.new([reg, leftclick, rightclick].freeze, @@linkrule).freeze end
 
-  def self.addwidgetrule(reg, widget = nil)
-    @@widgetrule = @@widgetrule.unshift([reg, (widget or Proc.new)]) end
+  def self.addwidgetrule(reg, widget = nil, &block)
+    @@widgetrule = @@widgetrule.unshift([reg, (widget || block)]) end
 
   # URLを開く
   def self.openurl(url)
@@ -199,12 +199,10 @@ class Gtk::IntelligentTextview < Gtk::TextView
           offset += 1 end } } end
 
   def clickable?(model)
-    has_model_intent = Enumerator.new {|y| Plugin.filtering(:intent_select_by_model_slug, model.class.slug, y) }.first
+    has_model_intent = Plugin.collect(:intent_select_by_model_slug, model.class.slug, Pluggaloid::COLLECT).first
     return true if has_model_intent
-    Enumerator.new {|y|
-      Plugin.filtering(:model_of_uri, model.uri, y)
-    }.any?{|model_slug|
-      Enumerator.new {|y| Plugin.filtering(:intent_select_by_model_slug, model_slug, y) }.first
-    }
+    Plugin.collect(:model_of_uri, model.uri).any? do |model_slug|
+      Plugin.collect(:intent_select_by_model_slug, model_slug, Pluggaloid::COLLECT).first
+    end
   end
 end

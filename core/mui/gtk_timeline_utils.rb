@@ -10,7 +10,6 @@ require 'gtk3'
 =end
 module Gtk::TimeLineUtils
 
-  include UiThreadOnly
   include Enumerable
 
   def self.included(obj)

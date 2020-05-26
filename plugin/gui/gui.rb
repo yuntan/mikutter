@@ -15,6 +15,8 @@ require_relative 'command'
 
 Plugin.create :gui do
 
+  defevent :gui_timeline_add_messages, prototype: [Plugin::GUI::Timeline, Pluggaloid::STREAM]
+
   # タブを作成する
   # ==== Args
   # [slug] ユニークな識別名。
@@ -160,7 +162,7 @@ Plugin.create :gui do
   defevent :gui_timeline_set_timeline_max, prototype: [Plugin::GUI::Timeline, Integer]
 
   # タイムラインのメッセージを順に処理するフィルタ
-  defevent :gui_timeline_each_messages, prototype: [Plugin::GUI::Timeline, :<<]
+  defevent :gui_timeline_each_messages, prototype: [Plugin::GUI::Timeline, Pluggaloid::COLLECT]
 
   # タイムラインからメッセージが除去された際に発生させるイベント
   defevent :gui_timeline_message_removed, prototype: [Plugin::GUI::Timeline, Diva::Model]

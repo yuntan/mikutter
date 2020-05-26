@@ -13,9 +13,7 @@ Plugin.create(:mastodon) do
     mastodon_instances: Hash.new,
   }
   defaults.each do |key, value|
-    if UserConfig[key].nil?
-      UserConfig[key] = value
-    end
+    UserConfig[key] ||= value
   end
 
   instance_config = at(:instances)
@@ -44,7 +42,7 @@ Plugin.create(:mastodon) do
           next
         end
         instance = await pm::Instance.add(result[:domain]).trap{ nil }
-        if instance.nil?
+        unless instance
           error_msg = _('接続に失敗しました。もう一度確認してください。')
           next
         end
@@ -53,7 +51,6 @@ Plugin.create(:mastodon) do
       end
       domain = result[:domain]
       label _('%{domain} サーバーを追加しました') % {domain: domain}
-      Plugin.call(:mastodon_restart_instance_stream, domain)
       Plugin.call(:mastodon_instance_created, domain)
     end
   end
@@ -71,7 +68,7 @@ Plugin.create(:mastodon) do
 
   # 削除
   on_mastodon_instances_delete_with_confirm do |domain|
-    next if UserConfig[:mastodon_instances][domain].nil?
+    next unless UserConfig[:mastodon_instances][domain]
     dialog _('サーバー設定の削除') do
       label _('サーバー %{domain} を削除しますか？') % {domain: domain}
     end.next {

@@ -109,7 +109,7 @@ Plugin.create :guide do
   end
 
   defsequence :hello_world do
-    world = Enumerator.new{|y| Plugin.filtering(:worlds, y) }.first
+    world = Plugin.collect(:worlds).first
     name =
       case
       when defined?(world.user.name)
@@ -148,7 +148,7 @@ Plugin.create :guide do
                  hint: _('← こんなアイコンのタブが右にあると思うので、クリックしてください'),
                  icon: Skin[:icon]
                 ) do |ach|
-    if Enumerator.new{|y| Plugin.filtering(:worlds, y) }.take(1).to_a.empty?
+    if Plugin.collect(:worlds).take(1).to_a.empty?
       guide_start(ach)
     else
       ach.take!

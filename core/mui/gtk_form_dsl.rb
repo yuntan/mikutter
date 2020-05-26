@@ -106,12 +106,9 @@ module Gtk::FormDSL
 
   # 一行テキストボックス
   # ==== Args
-  # [label] ラベル
+  # [text] ラベル
   # [config] キー
   def input(text, config, action=nil)
-    label = Gtk::Label.new(text).apply do
-      self.halign = :end
-    end
     preedit = self[config] || ""
     entry = Gtk::Entry.new.apply do
       self.hexpand = true
@@ -140,11 +137,22 @@ module Gtk::FormDSL
       widget_right = box
     end
 
-    # attach to a new row of the grid
-    attach_next_to label, nil, :bottom, 1, 1
-    attach_next_to widget_right, label, :right, 1, 1
+    if text
+      label = Gtk::Label.new(text).apply do
+        self.halign = :end
+      end
 
-    [label, widget_right].freeze
+      # attach to a new row of the grid
+      attach_next_to label, nil, :bottom, 1, 1
+      attach_next_to widget_right, label, :right, 1, 1
+
+      [label, widget_right].freeze
+    else
+      # attach to a new row of the grid
+      attach_next_to widget_right, nil, :bottom, 1, 1
+
+      [widget_right].freeze
+    end
   end
 
   # 一行テキストボックス(非表示)
@@ -209,14 +217,14 @@ module Gtk::FormDSL
   # ==== Args
   # [title] ラベル
   # [&block] ブロック
-  def settings(title)
+  def settings(title, &block)
     group = Gtk::Frame.new.set_border_width(8)
     if(title.is_a?(Gtk::Widget))
       group.set_label_widget(title)
     else
       group.set_label(title) end
     box = create_inner_setting.set_border_width(4)
-    box.instance_eval(&Proc.new)
+    box.instance_eval(&block)
     add group.add(box)
     group
   end
@@ -282,6 +290,31 @@ module Gtk::FormDSL
     container
   end
 
+  # リストビューを表示する。
+  # ==== Args
+  # [label] ラベル
+  # [config] 設定のキー
+  # [columns:]
+  #   配列の配列で、各要素は[カラムのタイトル(String), カラムの表示文字を返すProc]
+  # [reorder:]
+  #   _true_ なら、ドラッグ＆ドロップによる並び替えを許可する
+  # [&block] 内容
+  def listview(config, columns:, edit: true, reorder: edit, object_initializer: :itself.to_proc, &generate)
+    listview = Gtk::FormDSL::ListView.new(
+      self, columns, config, object_initializer,
+      create: edit,
+      update: edit,
+      delete: edit,
+      reorder: reorder,
+      &generate)
+    pack_start(Gtk::VBox.new(false, 4).
+                 #closeup(listview.filter_entry).
+                 add(Gtk::HBox.new(false, 4).
+                       add(listview)
+                       .closeup(listview.buttons(Gtk::VBox))
+                    ))
+  end
+
   # 要素を１つ選択させる
   # ==== Args
   # [label] ラベル
@@ -290,9 +323,9 @@ module Gtk::FormDSL
   #   連想配列で、 _値_ => _ラベル_ の形式で、デフォルト値を与える。
   #   _block_ と同時に与えれられたら、 _default_ の値が先に入って、 _block_ は後に入る。
   # [&block] 内容
-  def select(label, config, default={}, &block)
-    builder = Gtk::FormDSL::Select.new self, default
-    block_given? and builder.instance_eval(&block)
+  def select(label, config, default={}, **kwrest, &block)
+    builder = Gtk::FormDSL::Select.new self, default.merge(kwrest)
+    block and builder.instance_eval(&block)
     container = builder.build label, config
     attach_next_to container, nil, :bottom, 2, 1
     container
@@ -306,10 +339,20 @@ module Gtk::FormDSL
   #   連想配列で、 _値_ => _ラベル_ の形式で、デフォルト値を与える。
   #   _block_ と同時に与えれられたら、 _default_ の値が先に入って、 _block_ は後に入る。
   # [&block] 内容
-  def multiselect(label, config, default = {})
-    builder = Gtk::FormDSL::MultiSelect.new(self, default)
-    builder.instance_eval(&Proc.new) if block_given?
+  def multiselect(label, config, default = {}, mode: :auto, &block)
+    builder = Gtk::FormDSL::MultiSelect.new(self, default, mode: mode)
+    builder.instance_eval(&block) if block
     add container = builder.build(label, config)
+    container
+  end
+
+  def keybind(title, config)
+    keyconfig = Gtk::KeyConfig.new(title, self[config] || "")
+    container = Gtk::HBox.new(false, 0)
+    container.pack_start(Gtk::Label.new(title), false, true, 0)
+    container.pack_start(Gtk::Alignment.new(1.0, 0.5, 0, 0).add(keyconfig), true, true, 0)
+    keyconfig.change_hook = ->(modify) { self[config] = modify }
+    closeup(container)
     container
   end
 
@@ -394,9 +437,7 @@ module Gtk::FormDSL
         when Diva::Model
           value.pixbuf(width: 48, height: 48)
         else
-          Enumerator.new{ |y|
-            Plugin.filtering(:photo_filter, value, y)
-          }.first.pixbuf(width: 48, height: 48) rescue nil
+          Plugin.collect(:photo_filter, value, Pluggaloid::COLLECT).first.pixbuf(width: 48, height: 48) rescue nil
         end
       }
     )
@@ -487,7 +528,7 @@ module Gtk::FormDSL
   end
 
   def fs_photo_thumbnail(path)
-    Enumerator.new{|y| Plugin.filtering(:photo_filter, path, y) }.first
+    Plugin.collect(:photo_filter, path, Pluggaloid::COLLECT).first
   end
 
   def gen_fileselect_dialog_generator(title, action, dir, config:, shortcuts: [], filters: {}, use_preview: false, &result_callback)
@@ -558,3 +599,4 @@ end
 
 require 'mui/gtk_form_dsl_select'
 require 'mui/gtk_form_dsl_multi_select'
+require 'mui/gtk_form_dsl_listview'

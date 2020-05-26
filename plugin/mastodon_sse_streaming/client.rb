@@ -4,12 +4,14 @@ module Plugin::MastodonSseStreaming
   class Parser
     attr_reader :buffer
 
-    def initialize(plugin, slug)
-      @plugin = plugin
-      @slug = slug
+    #
+    # @param [Plugin::Mastodon::SSEAuthorizedType|Plugin::Mastodon::SSEPublicType] connection_type
+    #
+    def initialize(connection, receiver)
+      @connection = connection
       @buffer = ''
-      @records = []
       @event = @data = nil
+      @receiver = receiver
     end
 
     def <<(str)
@@ -18,44 +20,46 @@ module Plugin::MastodonSseStreaming
       self
     end
 
+    def event_received(event, payload)
+      case event
+      when 'update'       then update_handler(payload)
+      when 'notification' then notification_handler(payload)
+      end
+    end
+
     def consume
       # 改行で分割
-      lines = @buffer.split("\n", -1)
-      @buffer = lines.pop  # 余りを次回に持ち越し
+      *lines, @buffer = @buffer.split("\n", -1)
+      last_type = nil
 
       # SSEのメッセージパース
-      records = lines
-        .select{|l| !l.start_with?(":") }  # コメント除去
-        .map{|l|
-          key, value = l.split(": ", 2)
-          { key: key, value: value }
-        }
-        .select{|r|
-          ['event', 'data', 'id', 'retry', nil].include?(r[:key])
-          # これら以外のフィールドは無視する（nilは空行検出のため）
-          # cf. https://developer.mozilla.org/ja/docs/Server-sent_events/Using_server-sent_events#Event_stream_format
-        }
-      @records.concat(records)
-
-      last_type = nil
-      while r = @records.shift
-        if last_type == 'data' && r[:key] != 'data'
-          if @event.nil?
+      lines.select { |l|
+        !l.start_with?(':')     # コメント除去
+      }.map { |l|
+        l.split(": ", 2)
+      }.select { |key, _|
+        # これら以外のフィールドは無視する（nilは空行検出のため）
+        # cf. https://developer.mozilla.org/ja/docs/Server-sent_events/Using_server-sent_events#Event_stream_formata
+        ['event', 'data', 'id', 'retry', nil].include?(key)
+      }.each do |type, payload|
+        if last_type == 'data' && type != 'data'
+          unless @event
             @event = ''
           end
-          Plugin.call(:sse_message_type_event, @slug, @event, @data)
-          Plugin.call(:"mastodon_sse_on_#{@event}", @slug, @data)  # 利便性のため
+          Plugin.call(:sse_message_type_event, @connection, @event, @data)
+          Plugin.call(:"mastodon_sse_on_#{@event}", @connection, @data)  # 利便性のため
+          event_received(@event, JSON.parse(@data, symbolize_names: true))
           @event = @data = nil  # 一応リセット
         end
 
-        case r[:key]
+        case type
         when nil
           # 空行→次の処理単位へ移動
           @event = @data = nil
           last_type = nil
         when 'event'
           # イベントタイプ指定
-          @event = r[:value]
+          @event = payload
           last_type = 'event'
         when 'data'
           # データ本体
@@ -64,11 +68,9 @@ module Plugin::MastodonSseStreaming
           else
             @data += "\n"
           end
-          @data += r[:value]
+          @data += payload
           last_type = 'data'
         when 'id'
-          # EventSource オブジェクトの last event ID の値に設定する、イベント ID です。
-          Plugin.call(:sse_message_type_id, @slug, id)
           @event = @data = nil  # 一応リセット
           last_type = 'id'
         when 'retry'
@@ -77,13 +79,74 @@ module Plugin::MastodonSseStreaming
           # 整数値ではない値が指定されると、このフィールドは無視されます。
           #
           # [What code handles this?]じゃねんじゃｗ
-          if r[:value] =~ /\A-?(0|[1-9][0-9]*)\Z/
-            Plugin.call(:sse_message_type_retry, @slug, r[:value].to_i)
-          end
           @event = @data = nil  # 一応リセット
           last_type = 'retry'
-        else
         end
+      end
+    end
+
+    def update_handler(payload)
+      message = Plugin::Mastodon::Status.build(@connection.connection_type.server, payload)
+      if message
+        @receiver << message
+        Plugin.call(:update, nil, [message])
+      end
+    end
+
+    def mention_handler(status)
+      message = Plugin::Mastodon::Status.build(@connection.connection_type.server, status)
+      if message
+        @receiver << message
+      end
+    end
+
+    def reblog_handler(account:, status:)
+      Plugin.call(:share,
+                  Plugin::Mastodon::Account.new(account),
+                  Plugin::Mastodon::Status.build(@connection.connection_type.server, status))
+    end
+
+    def favorite_handler(account:, status:)
+      message = Plugin::Mastodon::Status.build(@connection.connection_type.server, status)
+      user = Plugin::Mastodon::Account.new(account)
+      if message
+        message.favorite_accts << user.acct
+        message.set_modified(Time.now.localtime) if favorite_age?(user)
+        Plugin.call(:favorite, @connection.connection_type.world, user, message)
+      end
+    end
+
+    def follow_handler(account)
+      Plugin.call(:followers_created, @connection.connection_type.world,
+                  [Plugin::Mastodon::Account.new(account)])
+    end
+
+    def poll_handler(status)
+      message = Plugin::Mastodon::Status.build(@connection.connection_type.server, status)
+      if message
+        activity(:poll, _('投票が終了しました'), description: "#{message.uri}")
+      end
+    end
+
+    def notification_handler(payload)
+      case payload[:type]
+      when 'mention'   then mention_handler(payload[:status])
+      when 'reblog'    then reblog_handler(**payload.slice(:account, :status))
+      when 'favourite' then favorite_handler(**payload.slice(:account, :status))
+      when 'follow'    then follow_handler(payload[:account])
+      when 'poll'      then poll_handler(payload[:status])
+      else
+        # 未知の通知
+        warn 'unknown notification'
+        Plugin::Mastodon::Util.ppf payload if Mopt.error_level >= 2
+      end
+    end
+
+    def favorite_age?(user)
+      if user.me?
+        UserConfig[:favorited_by_myself_age]
+      else
+        UserConfig[:favorited_by_anyone_age]
       end
     end
   end

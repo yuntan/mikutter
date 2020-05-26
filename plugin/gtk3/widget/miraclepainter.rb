@@ -71,6 +71,11 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
   WIDTH_MIN = 100 # minimum width
   WIDTH_NAT = 250 # natural width
 
+  # :nodoc:
+  def score
+    @score ||= Plugin[:gtk3].score_of(model)
+  end
+
 =begin
   @@miracle_painters = Hash.new
 
@@ -295,11 +300,6 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
       "state_flags=#{state_flags.inspect}" if VERBOSE
 
     (state_flags & Gtk::StateFlags::SELECTED).zero? and textselector_unselect
-  end
-
-  # :nodoc:
-  memoize def score
-    Plugin[:gtk3].score_of(model)
   end
 
   def iob_icon_pixbuf
@@ -625,12 +625,8 @@ private
   end
 
   class << self
-    extend Memoist
-
-    memoize def gb_foot
-      Enumerator.new{|y|
-        Plugin.filtering(:photo_filter, Cairo::SpecialEdge::FOOTER_URL, y)
-      }.first
+    def gb_foot
+      @gb_foot ||= Plugin.collect(:photo_filter, Cairo::SpecialEdge::FOOTER_URL, Pluggaloid::COLLECT).first
     end
   end
 end

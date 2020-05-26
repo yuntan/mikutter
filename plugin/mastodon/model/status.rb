@@ -67,6 +67,10 @@ module Plugin::Mastodon
       @@status_storage = WeakStorage.new(String, Status, name: 'toot')
 
       def add_status_storage(toot)
+        raise "uri must not nil. but given #{toot.uri.inspect}" unless toot.uri
+        if @@status_storage.has_key?("#{toot.domain}:#{toot.uri}")
+          warn "key already exists: #{toot.domain}:#{toot.uri}"
+        end
         @@status_storage["#{toot.domain}:#{toot.uri}"] = toot
       end
 
@@ -100,15 +104,27 @@ module Plugin::Mastodon
         }
       end
 
-      def build(domain_name, json)
-        return [] if json.nil?
-        return build(domain_name, [json]) if json.is_a? Hash
+      # Mastodon APIレスポンスのJSONをパースした結果のHashを受け取り、それに対応する
+      # インスタンスを返す。
+      # ==== Args
+      # [server] Mastodonサーバ (Plugin::Mastodon::Instance)
+      # [record] APIレスポンスのstatusオブジェクト (Hash)
+      # ==== Return
+      # Plugin::Mastodon::Status
+      def build(server, record)
+        json2status(server.domain, record)
+      end
 
+      # buildと似ているが、配列を受け取って複数のインスタンスを同時に取得できる。
+      # ==== Args
+      # [server] Mastodonサーバ (Plugin::Mastodon::Instance)
+      # [json] APIレスポンスのstatusオブジェクトの配列 (Array)
+      # ==== Return
+      # Plugin::Mastodon::Status の配列
+      def bulk_build(server, json)
         json.map do |record|
-          json2status(domain_name, record)
-        end.compact.tap do |statuses|
-          Plugin.call(:mastodon_appear_toots, statuses)
-        end
+          build(server, record)
+        end.to_a
       end
 
       def json2status(domain_name, record)
@@ -118,7 +134,7 @@ module Plugin::Mastodon
         if record[:reblog]
           is_boost = true
 
-          boost_record = PM::Util.deep_dup(record)
+          boost_record = Plugin::Mastodon::Util.deep_dup(record)
           boost_record[:reblog] = nil
 
           record = record[:reblog]
@@ -127,7 +143,7 @@ module Plugin::Mastodon
         uri = record[:url] # quoting_messages等のために@@status_storageには:urlで入れておく
 
         status = merge_or_create(domain_name, uri, record)
-        return nil if status.nil?
+        return nil unless status
 
         # ブーストの処理
         if !is_boost
@@ -135,8 +151,8 @@ module Plugin::Mastodon
             # ブーストではないので、普通にstatusを返す。
         else
           boost_uri = boost_record[:uri] # reblogには:urlが無いので:uriで入れておく
-          boost = merge_or_create(domain_name, boost_uri, boost_record)
-          return nil if boost.nil?
+          boost = merge_or_create(domain_name, boost_uri, {**boost_record, url: boost_uri})
+          return nil unless boost
           status.reblog_status_uris << { uri: boost_uri, acct: boost_record[:account][:acct] }
           status.reblog_status_uris.uniq!
 
@@ -166,7 +182,6 @@ module Plugin::Mastodon
         else
           status = Status.new(new_hash)
         end
-        add_status_storage(status)
         status
       end
 
@@ -175,7 +190,7 @@ module Plugin::Mastodon
           domain_name = m[1]
           id = m[2]
           Plugin::Mastodon::API.status(domain_name, id).next{ |resp|
-            Status.build(domain_name, [resp.value]).first
+            Status.build(Plugin::Mastodon::Instance.load(domain_name), resp.value)
           }
         else
           Delayer::Deferred.new(true).tap{|d| d.fail(nil) }
@@ -226,9 +241,10 @@ module Plugin::Mastodon
       unless spoiler_text.empty?
         content = spoiler_text + "<br>----<br>" + content
       end
-      @description, @score = PM::Parser.dictate_score(content, mentions: mentions, emojis: emojis, media_attachments: media_attachments, poll: poll)
+      @description, @score = Plugin::Mastodon::Parser.dictate_score(content, mentions: mentions, emojis: emojis, media_attachments: media_attachments, poll: poll)
 
-      self
+      self.class.add_status_storage(self)
+      Plugin.call(:mastodon_appear_toots, [self])
     end
 
     def inspect
@@ -239,10 +255,10 @@ module Plugin::Mastodon
       # 取得元が発言者の所属サーバーであれば優先する
       account_domain = account&.domain
       account_domain2 = Account.domain(new_hash[:account][:url])
-      if domain.nil? || domain != account_domain && domain_name == account_domain2
+      if !domain || domain != account_domain && domain_name == account_domain2
         self.id = new_hash[:id]
         self.domain = domain_name
-        if (application.nil? || self[:source].nil?) && new_hash[:application]
+        if !(application && self[:source]) && new_hash[:application]
           self.application = Application.new(new_hash[:application])
           self[:source] = application.name
         end
@@ -254,11 +270,7 @@ module Plugin::Mastodon
     end
 
     def actual_status
-      if reblog.nil?
-        self
-      else
-        reblog
-      end
+      reblog || self
     end
 
     def icon
@@ -267,6 +279,10 @@ module Plugin::Mastodon
 
     def user
       account
+    end
+
+    def server
+      @server ||= Plugin::Mastodon::Instance.load(domain)
     end
 
     def retweet_count
@@ -285,10 +301,8 @@ module Plugin::Mastodon
       actual_status.reblog_status_uris.map{|pair| pair[:acct] }.compact.uniq.map{|acct| Account.findbyacct(acct) }.compact
     end
 
-    def shared?(counterpart = nil)
-      if counterpart.nil?
-        counterpart = Plugin.filtering(:world_current, nil).first
-      end
+    def shared?(counterpart=nil)
+      counterpart ||= Plugin.filtering(:world_current, nil).first
       if counterpart.respond_to?(:user_obj)
         counterpart = counterpart.user_obj
       end
@@ -304,9 +318,7 @@ module Plugin::Mastodon
     end
 
     def favorite?(counterpart = nil)
-      if counterpart.nil?
-        counterpart = Plugin.filtering(:world_current, nil).first
-      end
+      counterpart ||= Plugin.filtering(:world_current, nil).first
       if counterpart.respond_to?(:user_obj)
         counterpart = counterpart.user_obj
       end
@@ -324,10 +336,7 @@ module Plugin::Mastodon
     def add_attachments(text)
       if media_attachments && !media_attachments.empty?
         media_attachments.each do |attachment|
-          url = attachment.text_url
-          if url.nil?
-            url = attachment.url
-          end
+          url = attachment.text_url || attachment.url
           if !text.include?(url.to_s)
             text += " <a href=\"#{url}\">#{url}</a>"
           end
@@ -351,7 +360,7 @@ module Plugin::Mastodon
     end
 
     # この投稿の投稿主のアカウントの全権限を所有していればtrueを返す
-    def from_me?(world = Enumerator.new{|y| Plugin.filtering(:worlds, y) })
+    def from_me?(world = Plugin.collect(:worlds))
       account.me?(world)
     end
 
@@ -365,7 +374,7 @@ module Plugin::Mastodon
 
     # 自分へのreblog
     def reblog_to_me?(world)
-      return false if reblog.nil?
+      return false unless reblog
       reblog.from_me?(world)
     end
 
@@ -376,14 +385,14 @@ module Plugin::Mastodon
     end
 
     def to_me?(world = nil)
-      if !world.nil?
+      if world
         if world.is_a? Plugin::Mastodon::World
           return mention_to_me?(world) || reblog_to_me?(world)
         else
           return false
         end
       end
-      !to_me_world.nil?
+      !!to_me_world
     end
 
     # activity用
@@ -418,10 +427,10 @@ module Plugin::Mastodon
     def around(force_retrieve=false)
       if force_retrieve
         resp = Plugin::Mastodon::API.call!(:get, domain, '/api/v1/statuses/' + id + '/context')
-        return [self] if resp.nil?
-        @around = [*Status.build(domain, resp[:ancestors]),
+        return [self] unless resp
+        @around = [*Status.bulk_build(server, resp[:ancestors]),
                    self,
-                   *Status.build(domain, resp[:descendants])]
+                   *Status.bulk_build(server, resp[:descendants])]
       else
         @around || [self]
       end
@@ -444,7 +453,7 @@ module Plugin::Mastodon
     private def ancestors_force
       resp = Plugin::Mastodon::API.call!(:get, domain, '/api/v1/statuses/' + id + '/context')
       if resp
-        [self, *Status.build(domain, resp[:ancestors]).reverse]
+        [self, *Status.bulk_build(server, resp[:ancestors]).reverse]
       else
         [self]
       end
@@ -452,7 +461,7 @@ module Plugin::Mastodon
 
     # 返信表示用
     def has_receive_message?
-      !in_reply_to_id.nil?
+      !!in_reply_to_id
     end
 
     def repliable?(counterpart=nil)
@@ -486,7 +495,7 @@ module Plugin::Mastodon
         end
       end
       Plugin::Mastodon::API.status!(domain, in_reply_to_id)
-        &.yield_self { |r| Status.build(domain, r.value).first }
+        &.yield_self { |r| Status.build(server, r.value) }
         &.tap { |parent| parent.add_child(self) }
     end
 

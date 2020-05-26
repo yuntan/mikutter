@@ -28,7 +28,7 @@ UserConfig[:activity_max] ||= 1000
 
 Plugin.create(:activity) do
 
-  class ActivityView < ::Gtk::CRUD
+  class ActivityView < ::Gtk::CompatListView
     include ::Gtk::TreeViewPrettyScroll
 
     ICON = 0
@@ -42,7 +42,6 @@ Plugin.create(:activity) do
       type_strict plugin => Plugin
       @plugin = plugin
       super()
-      @creatable = @updatable = @deletable = false
     end
 
     def column_schemer
@@ -75,7 +74,7 @@ Plugin.create(:activity) do
 
   # アクティビティの古い通知を一定時間後に消す
   def reset_activity(model)
-    Reserver.new(60, thread: Delayer) do
+    Delayer.new(delay: 60) do
       if not model.destroyed?
         iters = model.to_enum(:each).to_a
         remove_count = iters.size - UserConfig[:activity_max]
@@ -193,9 +192,7 @@ Plugin.create(:activity) do
       when Diva::Model, nil, false
       # nothing to do
       else
-        params[:icon] = Enumerator.new{|y|
-          Plugin.filtering(:photo_filter, params[:icon], y)
-        }.first
+        params[:icon] = Plugin.collect(:photo_filter, params[:icon], Pluggaloid::COLLECT).first
       end
       # FIXME: gtk3
       activity_view.scroll_to_zero_lator! if activity_view.realized? and activity_view.vadjustment.value == 0.0

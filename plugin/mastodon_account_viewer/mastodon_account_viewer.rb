@@ -44,7 +44,7 @@ Plugin.create(:mastodon_account_viewer) do
     arrow_size = Gdk::Rectangle.new(0, 0, 16, 16)
     container = ::Gtk::VBox.new(false, 4)
 
-    Plugin.filtering(:mastodon_worlds, nil).first.each do |me|
+    Plugin.collect(:mastodon_worlds).each do |me|
       following = followed = blocked = false
 
       w_following_label = ::Gtk::Label.new(_("関係を取得中"))
@@ -251,19 +251,16 @@ Plugin.create(:mastodon_account_viewer) do
     world, = Plugin.filtering(:mastodon_current, nil)
     Plugin::Mastodon::API.get_local_account_id(world, user).next{ |account_id|
       Plugin::Mastodon::API.call(:get, world.domain, "/api/v1/accounts/#{account_id}/statuses", world.access_token).next{ |res|
-        if res.value
-          tl << pm::Status.build(world.domain, res.value)
-        end
+        tl << Plugin::Mastodon::Status.bulk_build(world.server, res.value)
       }
     }.terminate
+    acct, domain = user.acct.split('@', 2)
     if domain != world.domain
-      acct, domain = user.acct.split('@', 2)
       Plugin::Mastodon::API.call(
         :get, domain, "/users/#{acct}/outbox?page=true",
         nil,
         {},
         {'Accept' => 'application/activity+json'}).next{ |res|
-        next unless res[:orderedItems]
         res[:orderedItems].map{|record|
           case record[:type]
           when "Create"

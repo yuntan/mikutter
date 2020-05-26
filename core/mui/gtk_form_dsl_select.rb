@@ -14,7 +14,7 @@ class Gtk::FormDSL::Select
   # [label] ラベル。 _&block_ がなければ使われる。文字列。
   # [&block] Plugin::Settings のインスタンス内で評価され、そのインスタンスが内容として使われる
   def option(value, label = nil, &block)
-    @options += if block_given?
+    @options += if block
                   widgets = @formdsl.instance_eval(&block)
                   widgets.each { |w| w.parent&.remove w }
                   [[value, label, widgets.last].freeze]
