@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-require 'gtk2'
-require_relative '../utils'
-require 'mui/gtk_extension'
-require 'mui/gtk_contextmenu'
-
 # CRUDなリストビューを簡単に実現するためのクラス
 class Gtk::CompatListView < Gtk::TreeView
   extend Memoist

@@ -4,6 +4,7 @@
 require 'gtk3'
 
 require 'mui/gtk_contextmenu'
+require 'mui/gtk_compatlistview'
 require 'mui/gtk_crud'
 require 'mui/gtk_extension'
 require 'mui/gtk_intelligent_textview'
