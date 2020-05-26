@@ -210,7 +210,7 @@ class Gdk::SubPartsMessageBase < Gdk::SubParts
           messages.each { |m|
             my += message_height(m)
             if y <= ofsty + my
-              on_click(e, m)
+              on_click(ev, m)
               break end } end } end end
 
   # :nodoc:
