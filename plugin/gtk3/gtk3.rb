@@ -44,12 +44,11 @@ Plugin.create :gtk3 do
     @parent = window
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
-    # FIXME: 小さすぎる
-    window.set_size_request(240, 240)
     # FIXME: gtk3, find alternative method
     # geometry = get_window_geometry(i_window.slug)
     # window.set_default_size(*geometry[:size])
     # window.move(*geometry[:position])
+
     window.ssc(:event){ |window, event|
       if event.is_a? Gdk::EventConfigure
         geometry = (UserConfig[:windows_geometry] || {}).melt
