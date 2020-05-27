@@ -44,10 +44,12 @@ Plugin.create :gtk3 do
     @parent = window
     @slug_dictionary.add(i_window, window)
     window.title = i_window.name
-    # FIXME: gtk3, find alternative method
-    # geometry = get_window_geometry(i_window.slug)
-    # window.set_default_size(*geometry[:size])
-    # window.move(*geometry[:position])
+
+    geometry = get_window_geometry(i_window.slug)
+    if geometry
+      window.set_default_size(*geometry[:size])
+      window.move(*geometry[:position])
+    end
 
     window.ssc(:event){ |window, event|
       if event.is_a? Gdk::EventConfigure
@@ -607,13 +609,8 @@ Plugin.create :gtk3 do
 
   def get_window_geometry(slug)
     type_strict slug => Symbol
-    geo = UserConfig[:windows_geometry]
-    if defined? geo[slug]
-      geo[slug]
-    else
-      size = [Gdk.screen_width/3, Gdk.screen_height*4/5]
-      { size: size,
-        position: [Gdk.screen_width - size[0], Gdk.screen_height/2 - size[1]/2] } end end
+    UserConfig[:windows_geometry][slug]
+  end
 
   # ペインを作成
   # ==== Args
