@@ -152,9 +152,10 @@ module Gtk::FormDSL
         get_clipboard(Gdk::Selection::CLIPBOARD)
           .request_text { |_, text| entry.text = text }
       end
+
       box = Gtk::Box.new(:horizontal).apply do
         style_context.add_class :linked
-        add entry
+        add entry, expand: true
         add button
       end
       widget_right = box
