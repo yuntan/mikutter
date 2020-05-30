@@ -33,9 +33,14 @@ class Plugin::Settings::SettingDSL < Gtk::Grid
   end
 
   def initialize(plugin)
+    super()
+    self.orientation = :vertical
+    self.row_spacing = 12
+    self.column_spacing = 12
+    self.margin = 12
+
     type_strict plugin => Plugin
     @plugin = plugin
-    super()
   end
 
   def [](key)

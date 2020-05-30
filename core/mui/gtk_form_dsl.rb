@@ -3,12 +3,34 @@
 =begin rdoc
 UIを定義するためのDSLメソッドをクラスに追加するmix-in。
 現在の値（初期値）を返す[]メソッドと、値が変更された時に呼ばれる[]=メソッドを定義すること。
+includeするクラスはGtk::Gridでなければならない．
 =end
 module Gtk::FormDSL
+  class Chainable
+    def initialize(widget)
+      @widget = widget
+    end
+
+    def tooltip(text)
+      @widget.tooltip_text = text
+      self
+    end
+
+    def native
+      @widget
+    end
+  end
+
   extend Memoist
 
   PIXBUF_PHOTO_FILTER = Hash[GdkPixbuf::Pixbuf.formats.map{|f| ["#{f.description} (#{f.name})", f.extensions.flat_map{|x| [x.downcase.freeze, x.upcase.freeze] }.freeze] }].freeze
   PHOTO_FILTER = {'All images' => PIXBUF_PHOTO_FILTER.values.flatten}.merge(PIXBUF_PHOTO_FILTER).merge('All files' => ['*'])
+
+  def initialize(*_)
+    super
+
+    type_strict self => Gtk::Grid
+  end
 
   # 複数行テキスト
   # ==== Args
@@ -35,36 +57,47 @@ module Gtk::FormDSL
 
   # 特定範囲の数値入力
   # ==== Args
-  # [label] ラベル
-  # [config] 設定のキー
-  # [min] 最低値。これより小さい数字は入力できないようになる
-  # [max] 最高値。これより大きい数字は入力できないようになる
-  def adjustment(name, config, min, max)
-    container = Gtk::HBox.new(false, 0)
-    container.pack_start(Gtk::Label.new(name), false, true, 0)
-    adj = Gtk::Adjustment.new((self[config] or min).to_f, min.to_f, max.to_f, 1.0, 5.0, 0.0)
-    spinner = Gtk::SpinButton.new(adj, 0, 0)
-    adj.signal_connect(:value_changed){ |widget, e|
-      self[config] = widget.value.to_i
+  # [text] ラベルテキスト
+  # [key] 設定のキー
+  # [lower] 最低値。これより小さい数字は入力できないようになる
+  # [upper] 最高値。これより大きい数字は入力できないようになる
+  def adjustment(text, key, lower, upper)
+    label = Gtk::Label.new text
+    label.halign = :start
+
+    value = (self[key] || lower).to_f
+    lower, upper = lower.to_f, upper.to_f
+    step = 1.0
+    page, page_size = 5.0, 0.0
+    adj = Gtk::Adjustment.new value, lower, upper, step, page, page_size
+    adj.ssc :value_changed do
+      self[key] = adj.value.to_i
       false
-    }
-    add container.pack_start(Gtk::Alignment.new(1.0, 0.5, 0, 0).add(spinner), true, true, 0)
-    container
+    end
+    spinner = Gtk::SpinButton.new adj, 0, 0
+    spinner.halign = :end
+
+    attach_next_to label, nil, :bottom, 1, 1
+    attach_next_to spinner, label, :right, 1, 1
+
+    Chainable.new spinner
   end
 
   # 真偽値入力
   # ==== Args
-  # [label] ラベル
-  # [config] キー
-  def boolean(label, config)
-    input = Gtk::CheckButton.new(label)
-    input.active = self[config]
-    input.signal_connect(:toggled){ |widget|
-      self[config] = widget.active?
+  # [text] チェックボックスのラベルテキスト
+  # [key] キー
+  def boolean(text, key)
+    check = Gtk::CheckButton.new text
+    check.active = self[key]
+    check.ssc :toggled do
+      self[key] = check.active?
       false
-    }
-    add input
-    input
+    end
+
+    attach_next_to check, nil, :bottom, 2, 1
+
+    Chainable.new check
   end
 
   # ファイルを選択する
@@ -106,25 +139,15 @@ module Gtk::FormDSL
 
   # 一行テキストボックス
   # ==== Args
-  # [text] ラベル
-  # [config] キー
-  def input(text, config, action=nil)
-    preedit = self[config] || ""
-    entry = Gtk::Entry.new.apply do
-      self.hexpand = true
-      self.text = preedit
-    end
-    entry.ssc :changed do |entry|
-      self[config] = entry.text
-      false
-    end
-    widget_right = entry
+  # [text] ラベルテキスト
+  # [key] キー
+  def input(text, key, action=nil)
+    widget_right = entry = build_entry(key)
 
     if action
       # TODO; gtk3 case action
-      button = Gtk::Button.new.apply do
-        self.image = Gtk::Image.new icon_name: 'edit-paste-symbolic'
-      end
+      button = Gtk::Button.new
+      button.image = Gtk::Image.new icon_name: 'edit-paste-symbolic'
       button.ssc :clicked do
         get_clipboard(Gdk::Selection::CLIPBOARD)
           .request_text { |_, text| entry.text = text }
@@ -137,41 +160,45 @@ module Gtk::FormDSL
       widget_right = box
     end
 
+    widget_right.halign = :fill
+    widget_right.hexpand = true
+
     if text
-      label = Gtk::Label.new(text).apply do
-        self.halign = :end
-      end
+      label = Gtk::Label.new text
+      label.halign = :start
 
       # attach to a new row of the grid
       attach_next_to label, nil, :bottom, 1, 1
       attach_next_to widget_right, label, :right, 1, 1
-
-      [label, widget_right].freeze
     else
       # attach to a new row of the grid
-      attach_next_to widget_right, nil, :bottom, 1, 1
-
-      [widget_right].freeze
+      attach_next_to widget_right, nil, :bottom, 2, 1
     end
+
+    Chainable.new widget_right
   end
 
   # 一行テキストボックス(非表示)
   # ==== Args
-  # [label] ラベル
-  # [config] 設定のキー
-  def inputpass(label, config)
-    container = Gtk::HBox.new(false, 0)
-    input = Gtk::Entry.new
-    input.visibility = false
-    input.text = self[config] || ''
-    container.pack_start(Gtk::Label.new(label), false, true, 0) if label
-    container.pack_start(Gtk::Alignment.new(1.0, 0.5, 0, 0).add(input), true, true, 0)
-    input.signal_connect(:changed){ |widget|
-      self[config] = widget.text
-      false
-    }
-    add container
-    container
+  # [text] ラベルテキスト
+  # [key] 設定のキー
+  def inputpass(text, key)
+    entry = build_entry(key)
+    entry.visibility = false
+    entry.halign = :fill
+    entry.hexpand = true
+
+    if text
+      label = Gtk::Label.new text
+      label.halign = :start
+
+      attach_next_to label, nil, :bottom, 1, 1
+      attach_next_to entry, label, :right, 1, 1
+    else
+      attach_next_to entry, nil, :bottom, 2, 1
+    end
+
+    Chainable.new entry
   end
 
   # 複数テキストボックス
@@ -218,20 +245,23 @@ module Gtk::FormDSL
   # [title] ラベル
   # [&block] ブロック
   def settings(title, &block)
-    group = Gtk::Frame.new.set_border_width(8)
-    if(title.is_a?(Gtk::Widget))
-      group.set_label_widget(title)
-    else
-      group.set_label(title) end
-    box = create_inner_setting.set_border_width(4)
-    box.instance_eval(&block)
-    add group.add(box)
-    group
+    @headings ||= []
+    @headings << title
+
+    label = Gtk::Label.new @headings.map { |s| "<b>#{s}</b>" }.join ' > '
+    label.use_markup = true
+    label.halign = :start
+    attach_next_to label, nil, :bottom, 2, 1
+
+    instance_eval(&block)
+    @headings.pop
+
+    Chainable.new label
   end
 
   # 〜についてダイアログを出すためのボタン。押すとダイアログが出てくる
   # ==== Args
-  # [label] ラベル
+  # [text] ラベルテキスト
   # [options]
   #   設定値。以下のキーを含むハッシュ。
   #   _:name_ :: ソフトウェア名
@@ -244,11 +274,13 @@ module Gtk::FormDSL
   #   _:authors_ :: 作者の名前。通常MastodonのAcct（Array）
   #   _:artists_ :: デザイナとかの名前。通常MastodonのAcct（Array）
   #   _:documenters_ :: ドキュメントかいた人とかの名前。通常MastodonのAcct（Array）
-  def about(label, options={})
+  def about(text, options={})
     name_mapper = Hash.new{|h,k| k }
     name_mapper[:name] = :program_name
-    about = Gtk::Button.new(label)
-    about.signal_connect(:clicked){
+
+    button = Gtk::Button.new label: text
+    button.hexpand = true
+    button.signal_connect(:clicked){
       dialog = Gtk::AboutDialog.new.show
       options.each { |key, value|
         dialog.__send__("#{name_mapper[key]}=", about_converter[key][value])
@@ -258,36 +290,63 @@ module Gtk::FormDSL
         false
       }
     }
-    add about
-    about
+
+    attach_next_to button, nil, :bottom, 2, 1
+
+    Chainable.new button
   end
 
   # フォントを決定させる。押すとフォント、サイズを設定するダイアログが出てくる。
   # ==== Args
-  # [label] ラベル
-  # [config] 設定のキー
-  def font(label, config)
-    add container = Gtk::HBox.new(false, 0).add(Gtk::Label.new(label).left).closeup(fontselect(label, config))
-    container
+  # [text] ラベルテキスト
+  # [key] 設定のキー
+  def font(text, key)
+    label = Gtk::Label.new text
+    label.halign = :start
+    font = build_font(key)
+    font.halign = :end
+
+    attach_next_to label, nil, :bottom, 1, 1
+    attach_next_to font, label, :right, 1, 1
+
+    Chainable.new font
   end
 
   # 色を決定させる。押すと色を設定するダイアログが出てくる。
   # ==== Args
-  # [label] ラベル
-  # [config] 設定のキー
-  def color(label, config)
-    add container = Gtk::HBox.new(false, 0).add(Gtk::Label.new(label).left).closeup(colorselect(label, config))
-    container
+  # [text] ラベルテキスト
+  # [key] 設定のキー
+  def color(text, key)
+    label = Gtk::Label.new text
+    label.halign = :start
+    color = build_color(key)
+    color.halign = :end
+
+    attach_next_to label, nil, :bottom, 1, 1
+    attach_next_to color, label, :right, 1, 1
+
+    Chainable.new color
   end
 
   # フォントと色を決定させる。
   # ==== Args
-  # [label] ラベル
-  # [font] フォントの設定のキー
-  # [color] 色の設定のキー
-  def fontcolor(label, font, color)
-    add container = font(label, font).closeup(colorselect(label, color))
-    container
+  # [text] ラベルテキスト
+  # [font_key] フォントの設定のキー
+  # [color_key] 色の設定のキー
+  def fontcolor(text, font_key, color_key)
+    label = Gtk::Label.new text
+    label.halign = :start
+    right_container = Gtk::Grid.new.tap do |grid|
+      grid.column_spacing = 6
+      grid << (build_font font_key)
+      grid << (build_color color_key)
+    end
+    right_container.halign = :end
+
+    attach_next_to label, nil, :bottom, 1, 1
+    attach_next_to right_container, label, :right, 1, 1
+
+    Chainable.new right_container
   end
 
   # リストビューを表示する。
@@ -317,33 +376,51 @@ module Gtk::FormDSL
 
   # 要素を１つ選択させる
   # ==== Args
-  # [label] ラベル
-  # [config] 設定のキー
+  # [text] ラベルテキスト
+  # [key] 設定のキー
   # [default]
   #   連想配列で、 _値_ => _ラベル_ の形式で、デフォルト値を与える。
   #   _block_ と同時に与えれられたら、 _default_ の値が先に入って、 _block_ は後に入る。
   # [&block] 内容
-  def select(label, config, default={}, **kwrest, &block)
-    builder = Gtk::FormDSL::Select.new self, default.merge(kwrest)
+  def select(text, key, default = {}, mode: :auto, **kwrest, &block)
+    builder = SelectBuilder.new self, text, key, default.merge(kwrest), mode: mode
     block and builder.instance_eval(&block)
-    container = builder.build label, config
-    attach_next_to container, nil, :bottom, 2, 1
-    container
+    widgets = builder.build
+
+    if widgets.size == 1
+      list, = widgets
+
+      attach_next_to list, nil, :bottom, 2, 1
+
+      Chainable.new list
+    else
+      label, combo = widgets
+      label.halign = :start
+      label.hexpand = true
+
+      attach_next_to label, nil, :bottom, 1, 1
+      attach_next_to combo, label, :right, 1, 1
+
+      Chainable.new combo
+    end
   end
 
   # 要素を複数個選択させる
   # ==== Args
-  # [label] ラベル
-  # [config] 設定のキー
+  # [text] ラベルテキスト
+  # [key] 設定のキー
   # [default]
   #   連想配列で、 _値_ => _ラベル_ の形式で、デフォルト値を与える。
   #   _block_ と同時に与えれられたら、 _default_ の値が先に入って、 _block_ は後に入る。
   # [&block] 内容
-  def multiselect(label, config, default = {}, mode: :auto, &block)
-    builder = Gtk::FormDSL::MultiSelect.new(self, default, mode: mode)
-    builder.instance_eval(&block) if block
-    add container = builder.build(label, config)
-    container
+  def multiselect(text, key, default = {}, &block)
+    builder = MultiSelectBuilder.new self, text, key, default
+    block and builder.instance_eval(&block)
+    list, = builder.build
+
+    attach_next_to list, nil, :bottom, 2, 1
+
+    Chainable.new list
   end
 
   def keybind(title, config)
@@ -418,15 +495,21 @@ module Gtk::FormDSL
     self.new()
   end
 
-  def method_missing_at_select_dsl(*args, &block)
-    @plugin.__send__(*args, &block)
-  end
-
   def method_missing(*args, &block)
     @plugin.__send__(*args, &block)
   end
 
-  private
+private
+
+  def build_entry(key)
+    entry = Gtk::Entry.new
+    entry.text = self[key] || ''
+    entry.ssc :changed do
+      self[key] = entry.text
+      false
+    end
+    entry
+  end
 
   def about_converter
     Hash.new(ret_nth).merge!(
@@ -444,29 +527,33 @@ module Gtk::FormDSL
   end
   memoize :about_converter
 
-  def colorselect(label, config)
-    color = self[config]
-    button = Gtk::ColorButton.new((color and Gdk::Color.new(*color)))
-    button.title = label
-    button.signal_connect(:color_set){ |w|
-      self[config] = w.color.to_a }
-    button
+  def build_font(key)
+    s = self[key]
+    font = Gtk::FontButton.new(*(s ? [s] : []))
+    font.ssc(:font_set) { self[key] = font.font_name }
+    font
   end
 
-  def fontselect(label, config)
-    button = Gtk::FontButton.new(self[config])
-    button.title = label
-    button.signal_connect(:font_set){ |w|
-      self[config] = w.font_name }
-    button end
+  def build_color(key)
+    a = self[key]
+
+    # migration from Gdk::Color to Gdk::RGBA
+    a.first.is_a? Integer and a = self[key] = a.map { |i| i.to_f / 65_536 }
+
+    color = Gtk::ColorButton.new(*(a ? [Gdk::RGBA.new(*a)] : []))
+    color.ssc(:color_set) { self[key] = color.rgba.to_a[0, 3] }
+    color
+  end
 
   def fsselect(label, config, dir: Dir.pwd, action: Gtk::FileChooser::ACTION_OPEN, title: label, shortcuts: [], filters: {}, use_preview: false)
-    container = input(label, config)
-    input = container.children.last.children.first
+    input = input(label, config).native
     button = Gtk::Button.new(Plugin[:settings]._('参照'))
-    container.pack_start(button, false)
     button.signal_connect(:clicked, &gen_fileselect_dialog_generator(title, action, dir, config: config, shortcuts: shortcuts, filters: filters, use_preview: use_preview, &input.method(:text=)))
-    container
+    Gtk::Box.new(:horizontal).apply do
+      style_context.add_class :linked
+      add input
+      add button
+    end
   end
 
   def fs_photoselect(label, config, dir: Dir.pwd, action: Gtk::FileChooser::ACTION_OPEN, title: label, width: 64, height: 32, shortcuts: [], filters: {}, use_preview: true)
