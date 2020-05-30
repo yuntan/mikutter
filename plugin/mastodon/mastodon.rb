@@ -224,8 +224,8 @@ Plugin.create(:mastodon) do
              'mstdn.nere9.help' => _('nere9'),
              'mstdn.y-zu.org' => _('Yづドン'),
             ) do
-        option(:other, _('その他')) do
-          input _('ドメイン'), :domain
+        option :other do
+          input _('その他'), :domain
         end
       end
 
