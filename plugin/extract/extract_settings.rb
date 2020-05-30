@@ -10,6 +10,7 @@ Plugin.create :extract do
     builder.add_from_file s
 
     tablist = Plugin::Extract::ExtractTabList.new(Plugin[:extract])
+    tablist.hexpand = true
 
     grid = builder.get_object 'grid'
     add grid
