@@ -76,7 +76,7 @@ Plugin.create :change_account do
 
   on_request_world_add do
     dialog(_('アカウント追加')){
-      select 'Select world', :world do
+      select 'Select world', :world, mode: :list do
         worlds, = Plugin.filtering(:world_setting_list, Hash.new)
         worlds.values.each do |world|
           option world, world.name
