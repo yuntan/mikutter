@@ -57,7 +57,7 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
   include Gdk::SubPartsHelper
   include Gdk::MarkupGenerator
 
-  WHITE = ([0xffff]*3).freeze
+  WHITE = [1, 1, 1].freeze
   BLACK = [0, 0, 0].freeze
   NUMERONYM_MATCHER = /[a-zA-Z]{4,}/.freeze
   NUMERONYM_CONVERTER = ->(r) { "#{r[0]}#{r.size-2}#{r[-1]}" }
@@ -227,6 +227,7 @@ class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
     Gtk.render_background style_context, context, x, y, w, h
 
     render_to_context context
+    true # stop propagation
   end
 
   # connect signal Gtk::Widget*clicked
@@ -407,9 +408,8 @@ private
       description_attr_list(emoji_height: layout.pixel_size[1])
     )
     layout.wrap = Pango::WrapMode::CHAR
-    color = Plugin.filtering(:message_font_color, message, nil).last
-    color = BLACK if not(color and color.is_a? Array and 3 == color.size)
-    context.set_source_rgb(*color.map{ |c| c.to_f / 65536 }) if context
+    rgb = Plugin.filtering(:message_font_color, message, nil).last || BLACK
+    context.set_source_rgb(*rgb) if context
     layout.text = plain_description
 
     return layout until layout.context
@@ -433,10 +433,9 @@ private
   # ヘッダ（左）のための Pango::Layout のインスタンスを返す
   def header_left(context = nil)
     attr_list, text = header_left_markup
-    color = Plugin.filtering(:message_header_left_font_color, message, nil).last
-    color = BLACK if not(color and color.is_a? Array and 3 == color.size)
+    rgb = Plugin.filtering(:message_header_left_font_color, message, nil).last || BLACK
     font = Plugin.filtering(:message_header_left_font, message, nil).last
-    context&.set_source_rgb(*color.map{ |c| c.to_f / 65536 })
+    context&.set_source_rgb(*rgb)
     (context || self).create_pango_layout.tap do |layout|
       layout.attributes = attr_list
       layout.font_description = font_description(font) if font
@@ -498,11 +497,8 @@ private
     color = Plugin.filtering(
       selected? ? :message_selected_bg_color : :message_bg_color,
       model, nil
-    ).last
-    if color.is_a? Array and 3 == color.size
-      color.map{ |c| c.to_f / 65536 }
-    else
-      WHITE end end
+    ).last || WHITE
+  end
 
   # Graphic Context にパーツを描画
   def render_to_context(context)
@@ -571,8 +567,7 @@ private
       hl_layout = header_left(context)
       context.show_pango_layout(hl_layout)
       hr_layout = header_right(context)
-      hr_color = Plugin.filtering(:message_header_right_font_color, message, nil).last
-      hr_color = BLACK if not(hr_color and hr_color.is_a? Array and 3 == hr_color.size)
+      hr_color = Plugin.filtering(:message_header_right_font_color, message, nil).last || BLACK
 
       @hl_region = Cairo::Region.new([header_text_rect.x, header_text_rect.y,
                                       hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE])
@@ -590,7 +585,7 @@ private
           context.rectangle(-20, 0, hr_layout.size[0] / Pango::SCALE + 20, hr_layout.size[1] / Pango::SCALE)
           context.set_source(grad)
           context.fill() end
-        context.set_source_rgb(*hr_color.map{ |c| c.to_f / 65536 })
+        context.set_source_rgb(*hr_color)
         context.show_pango_layout(hr_layout) } }
     context.save{
       context.translate(main_text_rect.x, main_text_rect.y)
