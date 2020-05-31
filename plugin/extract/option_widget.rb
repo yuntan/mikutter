@@ -4,7 +4,7 @@ require 'mui/gtk_form_dsl'
 require 'mui/gtk_form_dsl_multi_select'
 require 'mui/gtk_form_dsl_select'
 
-class Plugin::Extract::OptionWidget < Gtk::Box
+class Plugin::Extract::OptionWidget < Gtk::Grid
   include Gtk::FormDSL
 
   def create_inner_setting
@@ -14,7 +14,9 @@ class Plugin::Extract::OptionWidget < Gtk::Box
   def initialize(plugin, extract)
     @plugin = plugin
     @extract = extract
-    super(:vertical)
+
+    super()
+    self.row_spacing = self.column_spacing = self.margin = 12
   end
 
   def [](key)
@@ -35,5 +37,9 @@ class Plugin::Extract::OptionWidget < Gtk::Box
     end
     @extract.notify_update
     value
+  end
+
+  def method_missing(method, *args, &block)
+    @plugin.send(method, *args, &block)
   end
 end

@@ -88,8 +88,8 @@ Plugin.create :extract do
     dialog.destroy
   end
 
-  on_extract_open_edit_dialog do |extract_id|
-    window = ::Plugin::Extract::EditWindow.new(extract_tabs[extract_id], self)
+  on_extract_open_edit_dialog do |extract_slug|
+    window = ::Plugin::Extract::EditWindow.new(extract_tabs[extract_slug], self)
     event = on_extract_tab_update do |setting|
       if extract_slug == setting.slug && !window.destroyed?
         window.refresh_title
