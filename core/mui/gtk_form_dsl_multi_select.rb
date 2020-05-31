@@ -14,9 +14,9 @@ private
 
     check.ssc :toggled do
       if check.active?
-        @formdsl[@config_key] << value
+        @formdsl[@config_key] = (@formdsl[@config_key] || []) + [value]
       else
-        @formdsl[@config_key].delete value
+        @formdsl[@config_key] = @formdsl[@config_key] - [value]
       end
     end
     check
