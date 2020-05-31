@@ -82,7 +82,7 @@ module Gtk::FormDSL
       list.ssc :row_activated do |_, row|
         row.child.each do |w|
           if w.is_a? Gtk::CheckButton
-            w.active = true
+            w.clicked
           else
             w.can_focus? and w.has_focus = true
           end
