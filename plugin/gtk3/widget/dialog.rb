@@ -184,14 +184,14 @@ module Plugin::Gtk3
       end
 
       def initialize(plugin, default=Hash.new, &p)
-        super()
-        self.margin = 30
-        self.row_spacing = self.column_spacing = 12
-
         @plugin = plugin
         @values = default
         @proc = p
         reset
+
+        super()
+        self.margin = 30
+        self.row_spacing = self.column_spacing = 12
       end
 
       def run(response=nil)

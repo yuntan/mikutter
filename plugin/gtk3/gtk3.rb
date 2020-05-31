@@ -609,7 +609,8 @@ Plugin.create :gtk3 do
 
   def get_window_geometry(slug)
     type_strict slug => Symbol
-    UserConfig[:windows_geometry][slug]
+    geometry = UserConfig[:windows_geometry]
+    geometry and geometry[slug]
   end
 
   # ペインを作成
