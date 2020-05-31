@@ -81,7 +81,9 @@ class  Plugin::Extract::EditWindow < Gtk::Window
   def option_widget
     Plugin::Extract::OptionWidget.new(@plugin, @extract) do
       input _('名前'), :name
-      photoselect _('アイコン'), :icon, Skin.path, shortcuts: [Skin.default_dir, Skin.user_dir]
+      shortcuts = [Skin.default_dir]
+      Skin.user_dir and shortcuts << Skin.user_dir
+      photoselect _('アイコン'), :icon, dir: Skin.path, shortcuts: shortcuts
       settings _('通知') do
         fileselect _('サウンド'), :sound,
         dir: File.join(Skin.default_dir, 'sounds'),
