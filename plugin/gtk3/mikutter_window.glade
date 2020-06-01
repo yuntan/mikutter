@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Generated with glade 3.36.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <object class="GtkApplicationWindow" id="window">
@@ -8,9 +8,6 @@
     <property name="default_height">600</property>
     <property name="icon">../../core/skin/data/icon_alternative.png</property>
     <property name="show_menubar">False</property>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkGrid" id="container">
         <property name="visible">True</property>
@@ -75,7 +72,7 @@
             <property name="can_focus">False</property>
             <property name="hexpand">True</property>
             <property name="vexpand">True</property>
-            <property name="row_homogeneous">True</property>
+            <property name="column_homogeneous">True</property>
             <child>
               <placeholder/>
             </child>
@@ -167,6 +164,9 @@
           </packing>
         </child>
       </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
     </child>
   </object>
 </interface>
