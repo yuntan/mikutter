@@ -85,39 +85,6 @@ Plugin.create :extract do
     @message_created_after_load_proc ||= ->(message) { message.created >= @load_time }
   end
 
-  settings _("抽出タブ") do
-    tablist = Plugin::Extract::ExtractTabList.new(Plugin[:extract])
-    pack_start(Gtk::HBox.new.
-               add(tablist).
-               closeup(Gtk::VBox.new(false, 4).
-                       closeup(Gtk::Button.new(Gtk::Stock::ADD).tap{ |button|
-                                 button.ssc(:clicked) {
-                                   Plugin.call :extract_tab_open_create_dialog
-                                   true } }).
-                       closeup(Gtk::Button.new(Gtk::Stock::EDIT).tap{ |button|
-                                 button.ssc(:clicked) {
-                                   slug = tablist.selected_slug
-                                   if slug
-                                     Plugin.call(:extract_open_edit_dialog, slug)
-                                   end
-                                   true } }).
-                       closeup(Gtk::Button.new(Gtk::Stock::DELETE).tap{ |button|
-                                 button.ssc(:clicked) {
-                                   slug = tablist.selected_slug
-                                   if slug
-                                     Plugin.call(:extract_tab_delete_with_confirm, slug)
-                                   end
-                                   true } })))
-    add_tab_observer = on_extract_tab_create(&tablist.method(:add_record))
-    update_tab_observer = on_extract_tab_update(&tablist.method(:update_record))
-    delete_tab_observer = on_extract_tab_delete(&tablist.method(:remove_record))
-    tablist.ssc(:destroy) do
-      detach add_tab_observer
-      detach update_tab_observer
-      detach delete_tab_observer
-    end
-  end
-
   command(:extract_edit,
           name: _('抽出条件を編集'),
           condition: lambda{ |opt|
