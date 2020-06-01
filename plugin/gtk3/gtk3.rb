@@ -450,7 +450,7 @@ Plugin.create :gtk3 do
         i_tab = i_child
         pane = widgetof(i_pane)
         tab = widgetof(i_tab)
-        pane && tab and (pane.page = tab.position)
+        pane && tab and pane.page = pane.get_tab_pos_by_tab(tab)
       elsif i_parent.is_a?(Plugin::GUI::Window)
         i_term = i_child.respond_to?(:active_chain) ? i_child.active_chain.last : i_child
         if i_term
