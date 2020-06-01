@@ -213,8 +213,7 @@ module Plugin::Gtk3
             resume(response)
           end
         end.trap do |err|
-          error err.message
-          $stderr.puts err.backtrace
+          error err
         end
       end
 
@@ -233,8 +232,7 @@ module Plugin::Gtk3
           @awaiting_deferred.next{|deferred_result|
             run(deferred_result)
           }.trap{|err|
-            error err.message
-            $stderr.puts err.backtrace
+            error err
 
             @error_observer.on_abort(err) if @error_observer
           }
