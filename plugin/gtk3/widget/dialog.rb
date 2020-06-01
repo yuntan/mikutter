@@ -189,7 +189,7 @@ module Plugin::Gtk3
         @proc = p
         reset
 
-        super()
+        super() {}
         self.margin = 30
         self.row_spacing = self.column_spacing = 12
       end

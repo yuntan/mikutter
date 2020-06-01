@@ -465,13 +465,16 @@ Plugin.create :gtk3 do
   on_posted do |service, messages|
     messages.each{ |message|
       if(replyto_source = message.replyto_source)
-        Gdk::MiraclePainter.findbymessage(replyto_source).each{ |mp|
-          mp.on_modify } end } end
+        # Gdk::MiraclePainter.findbymessage(replyto_source).each{ |mp| mp.on_modify }
+      end
+    }
+  end
 
   on_favorite do |service, user, message|
     if(user.me?)
-      Gdk::MiraclePainter.findbymessage(message).each{ |mp|
-        mp.on_modify } end end
+      # Gdk::MiraclePainter.findbymessage(message).each{ |mp| mp.on_modify }
+    end
+  end
 
   on_konami_activate do
     Gtk.konami_load
