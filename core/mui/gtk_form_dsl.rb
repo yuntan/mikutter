@@ -94,17 +94,34 @@ module Gtk::FormDSL
   # ==== Args
   # [text] チェックボックスのラベルテキスト
   # [key] キー
-  def boolean(text, key)
-    check = Gtk::CheckButton.new text
-    check.active = self[key]
-    check.ssc :toggled do
-      self[key] = check.active?
-      false
+  def boolean(text, key, switch: false)
+    if switch
+      label = Gtk::Label.new text
+      label.halign = :start
+
+      switch = Gtk::Switch.new
+      switch.active = self[key]
+      switch.halign = :end
+      switch.ssc :activate do
+        self[key] = switch.active?
+      end
+
+      attach_next_to label, nil, :bottom, 1, 1
+      attach_next_to switch, label, :right, 1, 1
+
+      Chainable.new switch
+    else
+      check = Gtk::CheckButton.new text
+      check.active = self[key]
+      check.ssc :toggled do
+        self[key] = check.active?
+        false
+      end
+
+      attach_next_to check, nil, :bottom, 2, 1
+
+      Chainable.new check
     end
-
-    attach_next_to check, nil, :bottom, 2, 1
-
-    Chainable.new check
   end
 
   # ファイルを選択する

@@ -94,7 +94,7 @@ class  Plugin::Extract::EditWindow < Gtk::Window
                   _('Ogg (*.ogg)') => ['ogg', 'OGG'],
                   _('全てのファイル') => ['*']
                  }
-        boolean _('ポップアップ'), :popup
+        boolean _('ポップアップ'), :popup, switch: true
       end
       select(_('並び順'), :order, Hash[Plugin.collect(:extract_order).map{|o| [o.slug.to_s, o.name] }])
     end
