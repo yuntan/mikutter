@@ -17,9 +17,11 @@ Plugin.create(:quickstep) do
       set_icon Skin[:search]
       set_deletable true
       temporary_tab true
-      box = Gtk::VBox.new
-      put_widget(box)
-      nativewidget box
+      grid = Gtk::Grid.new
+      grid.orientation = :vertical
+      grid.hexpand = true
+      put_widget grid
+      nativewidget grid
       active!
     end
   end
@@ -55,14 +57,19 @@ Plugin.create(:quickstep) do
     [query, yielder]
   end
 
-  def put_widget(box)
+  def put_widget(grid)
     search = Gtk::Entry.new
+    search.hexpand = true
     complete = Plugin::Quickstep::Complete.new(search)
+    complete.valign = :fill
+    complete.vexpand = true
     search.ssc(:activate, &gen_search_activate_callback(complete))
     search.ssc(:realize, &gen_search_realize_callback)
     search.ssc(:key_press_event, &gen_common_shortcutkey_callback)
     complete.ssc(:key_press_event, &gen_common_shortcutkey_callback)
-    box.closeup(search).add(complete)
+
+    grid << search << complete
+
     complete
   end
 

@@ -4,7 +4,7 @@ slug: console
 depends:
   plugin:
   - gui
-  - gtk
+  - gtk3
   - uitranslator
   - skin
 version: '1.0'

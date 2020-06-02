@@ -54,11 +54,19 @@ Plugin.create :bugreport do
   end
 
   def main
-    Gtk::VBox.new(false, 0).
-      closeup(Gtk::IntelligentTextview.new(imsorry)).
-      pack_start(Gtk::ScrolledWindow.
-                 new.set_policy(Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS).
-                 add(Gtk::IntelligentTextview.new(backtrace)))
+    sw = Gtk::ScrolledWindow.new
+    sw.set_policy :never, :always
+    sw.vexpand = true
+    sw.valign = :fill
+    sw << Gtk::IntelligentTextview.new(backtrace)
+
+    sorry = Gtk::IntelligentTextview.new(imsorry)
+    sorry.hexpand = true
+
+    grid = Gtk::Grid.new
+    grid.orientation = :vertical
+
+    grid << sorry << sw
   end
 
   def send

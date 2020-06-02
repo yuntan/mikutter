@@ -5,7 +5,7 @@ depends:
   plugin:
   - settings
   - uitranslator
-  - gtk
+  - gtk3
   - skin
 version: '1.0'
 author: moguno

@@ -4,7 +4,7 @@ depends:
   mikutter: '0.2'
   plugin:
   - gui
-  - gtk
+  - gtk3
   - settings
   - uitranslator
   - skin

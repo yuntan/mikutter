@@ -135,15 +135,23 @@ module Plugin::Shortcutkey
       window.destroy_with_parent = true
       btn_ok = ::Gtk::Button.new(@plugin._("OK"))
       btn_cancel = ::Gtk::Button.new(@plugin._("キャンセル"))
-      window.
-        add(::Gtk::VBox.new(false, 16).
-              add(::Gtk::VBox.new(false, 16).
-                    closeup(key_box(values)).
-                    closeup(world_box(values)).
-                    add(command_box(values))).
-              closeup(::Gtk::HButtonBox.new.set_layout_style(::Gtk::ButtonBox::END).
-                        add(btn_cancel).
-                        add(btn_ok)))
+      box = ::Gtk::ButtonBox.new :horizontal
+      box.layout_style = :end
+      box.spacing = 6
+      box << btn_cancel << btn_ok
+      grid = ::Gtk::Grid.new
+      grid.orientation = :vertical
+      grid.row_spacing = 12
+      grid.margin = 12
+      grid << (::Gtk::Grid.new.tap do |grid|
+        grid.orientation = :vertical
+        grid.row_spacing = 12
+        c_box = command_box(values)
+        c_box.expand = true
+        grid << key_box(values) << world_box(values) << c_box
+      end)
+
+      window << grid
       window.show_all
 
       window.ssc(:destroy) { ::Gtk::main_quit }
@@ -236,17 +244,22 @@ module Plugin::Shortcutkey
 
     def command_box(results)
       treeview = CommandList.new(@plugin, results)
-      scrollbar = ::Gtk::VScrollbar.new(treeview.vadjustment)
+
+      sw = ::Gtk::ScrolledWindow.new
+      sw.expand = true
+      sw.set_policy :never, :automatic
+      sw << treeview
+
       filter_entry = treeview.filter_entry = Gtk::Entry.new
       filter_entry.primary_icon_pixbuf = Skin[:search].pixbuf(width: 24, height: 24)
       filter_entry.ssc(:changed) {
         treeview.model.refilter
         false }
-      return ::Gtk::VBox.new(false, 0)
-        .closeup(filter_entry)
-        .add(::Gtk::HBox.new(false, 0).
-               add(treeview).
-               closeup(scrollbar))
+
+      grid = ::Gtk::Grid.new
+      grid.orientation = :vertical
+      grid.row_spacing = 12
+      grid << filter_entry << sw
     end
 
     def world_selections(key: :itself, value: :itself)

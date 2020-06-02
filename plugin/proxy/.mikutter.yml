@@ -3,7 +3,7 @@ slug: :proxy
 depends:
   mikutter: '0.2'
   plugin:
-  - gtk
+  - gtk3
   - settings
   - uitranslator
 version: '1.0'

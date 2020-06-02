@@ -3,7 +3,7 @@ slug: :intent_selector
 depends:
   mikutter: '3.5'
   plugin:
-  - gtk
+  - gtk3
   - intent
   - skin
 version: '1.0'

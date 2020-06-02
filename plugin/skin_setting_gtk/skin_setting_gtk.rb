@@ -13,17 +13,17 @@ Plugin.create :skin do
   def preview_widget(info)
     fix = Gtk::Fixed.new
     frame = Gtk::Frame.new
-    box = Gtk::HBox.new(false)
+    grid = Gtk::Grid.new
 
     preview_icons(info[:dir]).each { |path|
       image = Gtk::WebIcon.new(
         Plugin.collect(:photo_filter, File.join(info[:dir], path), Pluggaloid::COLLECT),
         32, 32
       )
-      box.pack_start(image, false, false)
+      grid << image
     }
 
-    fix.put(frame.add(box, nil), 16, 0)
+    fix.put(frame.add(grid), 17, 0)
   end
 
   # インストール済みスキンのリスト
@@ -53,6 +53,7 @@ Plugin.create :skin do
 
   # 設定
   settings(_("スキン")) do
+    grid = Gtk::Grid.new
     current_radio = nil
 
     skin_infos.each { |slug, info|
@@ -72,10 +73,12 @@ Plugin.create :skin do
         end
       }
 
-      pack_start(button)
-      pack_start(preview_widget(info))
+      grid.attach_next_to button, nil, :bottom, 1, 1
+      grid.attach_next_to preview_widget(info), button, :right, 1, 1
 
       current_radio = button
     }
+
+    native grid
   end
 end

@@ -3,7 +3,7 @@ slug: quickstep
 depends:
   mikutter: 3.9.0
   plugin:
-  - gtk
+  - gtk3
   - uitranslator
 version: '2.0'
 author: toshi_a

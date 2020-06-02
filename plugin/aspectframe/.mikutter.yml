@@ -3,7 +3,7 @@ slug: :aspectframe
 depends:
   mikutter: '0.2'
   plugin:
-  - gtk
+  - gtk3
 version: '1.0'
 author: toshi_a
 name: Aspect Frame
