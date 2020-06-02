@@ -537,12 +537,19 @@ module Gtk::FormDSL
       delete: edit,
       reorder: reorder,
       &generate)
-    pack_start(Gtk::VBox.new(false, 4).
-                 #closeup(listview.filter_entry).
-                 add(Gtk::HBox.new(false, 4).
-                       add(listview)
-                       .closeup(listview.buttons(Gtk::VBox))
-                    ))
+    listview.hexpand = true
+
+    grid = Gtk::Grid.new
+    grid.orientation = :vertical
+    grid.row_spacing =  6
+    grid << (Gtk::Grid.new.tap do |grid|
+      grid.column_spacing = 6
+      grid << listview << listview.buttons
+    end)
+
+    attach_next_to grid, nil, :bottom, 2, 1
+
+    Chainable.new grid
   end
 
   # 要素を１つ選択させる

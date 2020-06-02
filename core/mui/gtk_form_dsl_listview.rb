@@ -110,11 +110,13 @@ class Gtk::FormDSL::ListView < Gtk::TreeView
     end
   end
 
-  def buttons(container_class)
-    container = container_class.new
-    container.closeup(create_button) if @creatable
-    container.closeup(update_button) if @updatable
-    container.closeup(delete_button) if @deletable
+  def buttons(orientation: :vertical, layout: :start)
+    box = Gtk::ButtonBox.new orientation
+    box.layout_style = layout
+    box.spacing = 6
+    @creatable and box << create_button
+    @updatable and box << update_button
+    @deletable and box << delete_button
   end
 
   private
@@ -136,7 +138,7 @@ class Gtk::FormDSL::ListView < Gtk::TreeView
   end
 
   def create_button
-    create = Gtk::Button.new(Gtk::Stock::ADD)
+    create = Gtk::Button.new stock_id: Gtk::Stock::ADD
     create.ssc(:clicked) do
       record_create
       true
@@ -145,7 +147,7 @@ class Gtk::FormDSL::ListView < Gtk::TreeView
   end
 
   def update_button
-    edit = Gtk::Button.new(Gtk::Stock::EDIT)
+    edit = Gtk::Button.new stock_id: Gtk::Stock::EDIT
     edit.ssc(:clicked) do
       record_update
       true
@@ -154,7 +156,7 @@ class Gtk::FormDSL::ListView < Gtk::TreeView
   end
 
   def delete_button
-    delete = Gtk::Button.new(Gtk::Stock::DELETE)
+    delete = Gtk::Button.new stock_id: Gtk::Stock::DELETE
     delete.ssc(:clicked) do
       record_delete
       true

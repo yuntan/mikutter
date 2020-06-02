@@ -12,27 +12,29 @@ class Gtk::CRUD < Gtk::CompatListView
     handle_row_activated
   end
 
-  def buttons(box_klass)
-    box_klass.new(false, 4).closeup(create_button).closeup(update_button).closeup(delete_button)
+  def buttons(orientation)
+    box = Gtk::ButtonBox.new(orientation)
+    box.spacing = 6
+    box << create_button << update_button << delete_button
   end
 
   def create_button
     if not defined? @create_button
-      @create_button = Gtk::Button.new(Gtk::Stock::ADD)
+      @create_button = Gtk::Button.new stock_id: Gtk::Stock::ADD
       @create_button.ssc(:clicked) {
         record_create(nil, nil) } end
     @create_button end
 
   def update_button
     if not defined? @update_button
-      @update_button = Gtk::Button.new(Gtk::Stock::EDIT)
+      @update_button = Gtk::Button.new stock_id: Gtk::Stock::EDIT
       @update_button.ssc(:clicked) {
         record_update(nil, nil) } end
     @update_button end
 
   def delete_button
     if not defined? @delete_button
-      @delete_button = Gtk::Button.new(Gtk::Stock::DELETE)
+      @delete_button = Gtk::Button.new stock_id: Gtk::Stock::DELETE
       @delete_button.ssc(:clicked) {
         record_delete(nil, nil) } end
     @delete_button end
