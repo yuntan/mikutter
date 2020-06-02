@@ -112,14 +112,14 @@ Plugin.create(:mastodon) do
         true
       end
 
+      box = Gtk::ButtonBox.new :vertical
+      box.layout_style = :start
+      box.spacing = 6
+      box << btn_add << btn_delete
+
       grid = ::Gtk::Grid.new
       grid.column_spacing = 6
-      grid << treeview
-      grid << (::Gtk::Grid.new.tap do |grid|
-        grid.orientation = :vertical
-        grid.row_spacing = 6
-        grid << btn_add << btn_delete
-      end)
+      grid << treeview << box
 
       attach_next_to grid, nil, :bottom, 2, 1
     end
