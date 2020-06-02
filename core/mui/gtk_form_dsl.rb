@@ -667,6 +667,11 @@ module Gtk::FormDSL
     end
   end
 
+  def native(widget)
+    widget.hexpand = true
+    attach_next_to widget, nil, :bottom, 2, 1
+  end
+
   # settingsメソッドとSelectから内部的に呼ばれるメソッド。Groupの中に入れるGtkウィジェットを返す。
   # 戻り値は同時にこのmix-inをロードしている必要がある。
   def create_inner_setting
