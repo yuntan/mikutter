@@ -206,7 +206,7 @@ module Plugin::Mastodon
         end
         notice uri.to_s
         HTTPClient.new.request(method, uri.to_s, query, body, headers)
-      rescue err
+      rescue => err
         error err
       ensure
         files&.each(&:close)
