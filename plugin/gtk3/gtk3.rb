@@ -28,6 +28,7 @@ require_relative 'mainloop'
 require_relative 'mikutter_window'
 require_relative 'tab_toolbar'
 require_relative 'slug_dictionary'
+require_relative 'settings'
 
 Plugin.create :gtk3 do
   pg = Plugin::Gtk3
@@ -500,34 +501,36 @@ Plugin.create :gtk3 do
   filter_gui_timeline_selected_messages do |i_timeline, messages|
     timeline = widgetof(i_timeline)
     if timeline
-      [i_timeline, messages + timeline.get_active_messages]
+      [i_timeline, messages + timeline.active_models]
     else
       [i_timeline, messages] end end
 
   filter_gui_timeline_selected_text do |i_timeline, message, text|
-    timeline = widgetof(i_timeline)
-    next [i_timeline, message, text] if not timeline
-    record = timeline.get_record_by_message(message)
-    next [i_timeline, message, text] if not record
-    range = record.miracle_painter.textselector_range
-    next [i_timeline, message, text] if not range
-    if UserConfig[:miraclepainter_expand_custom_emoji]
-      adjust = score_of(message).each_with_object(Hash.new(0)) do |note, state|
-        if note.respond_to?(:inline_photo)
-          # 1 -> cairo_markup_generatorで便宜上置換された、絵文字の文字長
-          if range.include?(state[:index])
-            state[:end] += note.description.size - 1
-          elsif state[:index] < range.begin
-            state[:begin] += note.description.size - 1
-          end
-          state[:index] += 1
-        else
-          state[:index] += note.description.size
-        end
-      end
-      range = Range.new(range.begin + adjust[:begin], range.end + adjust[:begin] + adjust[:end], true)
-    end
-    [i_timeline, message, score_of(message).map(&:description).join[range]]
+    next [i_timeline, message, text]
+
+    # timeline = widgetof(i_timeline)
+    # next [i_timeline, message, text] if not timeline
+    # record = timeline.get_record_by_message(message)
+    # next [i_timeline, message, text] if not record
+    # range = record.miracle_painter.textselector_range
+    # next [i_timeline, message, text] if not range
+    # if UserConfig[:miraclepainter_expand_custom_emoji]
+    #   adjust = score_of(message).each_with_object(Hash.new(0)) do |note, state|
+    #     if note.respond_to?(:inline_photo)
+    #       # 1 -> cairo_markup_generatorで便宜上置換された、絵文字の文字長
+    #       if range.include?(state[:index])
+    #         state[:end] += note.description.size - 1
+    #       elsif state[:index] < range.begin
+    #         state[:begin] += note.description.size - 1
+    #       end
+    #       state[:index] += 1
+    #     else
+    #       state[:index] += note.description.size
+    #     end
+    #   end
+    #   range = Range.new(range.begin + adjust[:begin], range.end + adjust[:begin] + adjust[:end], true)
+    # end
+    # [i_timeline, message, score_of(message).map(&:description).join[range]]
   end
 
   filter_gui_destroyed do |i_widget|

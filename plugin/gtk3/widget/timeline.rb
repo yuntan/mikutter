@@ -37,14 +37,17 @@ module Plugin::Gtk3
       @imaginary = imaginary
       @hash = {} # Diva::URI => Row
       @order = ->(m) { m.modified.to_i }
-      @postbox = Gtk::Grid.new.tap do |grid|
-        grid.orientation = :vertical
+
+      @postbox = Gtk::Grid.new
+      @postbox.orientation = :vertical
+
+      @listbox = Gtk::ListBox.new
+      @listbox.selection_mode = :single
+      @listbox.set_sort_func do |row1, row2|
+        (@order.call row2.model) <=> (@order.call row1.model)
       end
-      @listbox = Gtk::ListBox.new.tap do |listbox|
-        listbox.selection_mode = :multiple
-        listbox.set_sort_func do |row1, row2|
-          (@order.call row2.model) <=> (@order.call row1.model)
-        end
+      @listbox.ssc :row_selected do
+        @imaginary.active!
       end
 
       add @postbox
@@ -74,12 +77,9 @@ module Plugin::Gtk3
       false
     end
 
-    def active!
-      # TODO
-      raise NotImplementedError
+    def active_models
+      [@listbox.selected_row&.model]
     end
-    alias active active!
-    deprecate :active, :active!, *YM
 
     def push!(model)
       check_and_push! model

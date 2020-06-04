@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+# frozen_string_literal: true
+
 require 'mui/cairo_icon_over_button'
 require 'mui/cairo_textselector'
 require 'mui/cairo_sub_parts_helper'
@@ -10,618 +11,286 @@ require 'mui/cairo_markup_generator'
 require 'mui/cairo_special_edge'
 require 'mui/gtk_photo_pixbuf'
 
-# Diva::Modelを表示するためのGtk::ListBoxRow。
-# 名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
-class Plugin::Gtk3::MiraclePainter < Gtk::ListBoxRow
-  # * カスタムwidgetの実装
-  #   https://developer.gnome.org/gtkmm-tutorial/stable/sec-custom-widgets.html.en
-  # * height-for-widthの実装
-  #   https://developer.gnome.org/gtk3/stable/GtkWidget.html#GtkWidget.description
+module Plugin::Gtk3
+  # Diva::Modelを表示するためのGtk::ListBoxRow。
+  # 名前は言いたかっただけ。クラス名まで全てはつね色に染めて♪
+  class MiraclePainter < Gtk::ListBoxRow
+    # * カスタムwidgetの実装
+    #   https://developer.gnome.org/gtkmm-tutorial/stable/sec-custom-widgets.html.en
+    # * height-for-widthの実装
+    #   https://developer.gnome.org/gtk3/stable/GtkWidget.html#GtkWidget.description
+    MARGIN = 3
+    SPACING = 3
+    EMOJI_SIZE = 18
 
-  class Rect
-    extend Memoist
-    attr_reader :x, :y, :width, :height
+    type_register
 
-    def initialize(x, y, width, height)
-      @x, @y, @width, @height = x, y, width, height
+    attr_reader :model
+    alias message model
+
+    def initialize(model)
+      super()
+
+      @model = model
+
+      build
     end
 
-    def point_in?(x, y)
-      left <= x and x <= right and top <= y and y <= bottom
+    # override virtual function Gtk::Widget.get_request_mode
+    def do_get_request_mode
+      Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
     end
 
-    def bottom
-      y + height end
+    # override virtual function Gtk::Widget.get_preferred_width
+    def do_get_preferred_width
+      [100, 250] # minimum and natural width
+    end
 
-    def right
-      x + width end
+    def signal_do_focus_in
+      notice 'b'
+      parent.focus
+    end
 
-    alias :left :x
-    alias :top :y
-  end
+    def score
+      @score ||= Plugin[:gtk3].score_of(model)
+    end
 
-  ICON_SIZE = [48, 48].freeze # [width, height]
-  MARGIN = 2 # margin for icon, etc
-  SPACING = 2 # spacing between mainparts and subparts
-  DEPTH = Gdk::Visual.system.depth # color depth
-  VERBOSE = false # for debug
+  private
 
-  extend Gem::Deprecate
+    def build
+      avatar_image = Gtk::Image.new
+      avatar_size = UserConfig[:gtk3_avatar_size]
+      avatar_image.pixbuf = model.user.icon.load_pixbuf(
+        width: avatar_size, height: avatar_size
+      ) do |pb|
+        avatar_image.pixbuf = pb
+      end
 
-  type_register
+      avatar_box = Gtk::EventBox.new
+      avatar_box.valign = :start
+      avatar_box << avatar_image
 
-  signal_new :clicked, GLib::Signal::RUN_FIRST | GLib::Signal::ACTION, nil, nil, Gdk::EventButton
+      @text_view = Gtk::TextView.new
+      @text_view.halign = :fill
+      @text_view.expand = true
+      build_text_view
 
-  include Gdk::IconOverButton
-  include Gdk::TextSelector
-  include Gdk::SubPartsHelper
-  include Gdk::MarkupGenerator
+      header_label = Gtk::Label.new
+      header_label.ellipsize = :end
+      header_label.single_line_mode = true
+      header_label.xalign = 0
+      header_label.markup = header_markup
 
-  WHITE = [1, 1, 1].freeze
-  BLACK = [0, 0, 0].freeze
-  NUMERONYM_MATCHER = /[a-zA-Z]{4,}/.freeze
-  NUMERONYM_CONVERTER = ->(r) { "#{r[0]}#{r.size-2}#{r[-1]}" }
+      timestamp_label = Gtk::Label.new timestamp_text
+      timestamp_label.single_line_mode = true
+      timestamp_label.xalign = 1
 
-  attr_reader :model
-  alias message model
-  # TODO: gtk3 deprecate :message
-  # deprecate :message, :model, 2019, 10
+      header_box = Gtk::Box.new :horizontal
+      header_box.spacing = SPACING
+      header_box.halign = :fill
+      header_box.hexpand = true
+      header_box.pack_start(header_label, fill: true, expand: true)
+                .pack_end(timestamp_label)
 
-  # TODO: gtk3 adjust size
-  WIDTH_MIN = 100 # minimum width
-  WIDTH_NAT = 250 # natural width
+      @subparts_grid = Gtk::Grid.new
+      @subparts_grid.halign = :fill
+      @subparts_grid.expand = true
+      build_subparts
 
-  # :nodoc:
-  def score
-    @score ||= Plugin[:gtk3].score_of(model)
-  end
+      grid = Gtk::Grid.new
+      grid.margin = MARGIN
+      grid.row_spacing = SPACING
+      grid.column_spacing = SPACING
 
-=begin
-  @@miracle_painters = Hash.new
+      grid.attach_next_to avatar_box, nil, :bottom, 1, 2
+      grid.attach_next_to header_box, avatar_box, :right, 1, 1
+      grid.attach_next_to @text_view, header_box, :bottom, 1, 1
+      grid.attach_next_to @subparts_grid, avatar_box, :bottom, 2, 1
 
-  # _message_ を内部に持っているGdk::MiraclePainterの集合をSetで返す。
-  # ログ数によってはかなり重い処理なので注意
-  def self.findbymessage(message)
-    result = Set.new
-    Gtk::TimeLine.timelines.each{ |tl|
-      found = tl.get_record_by_message(message)
-      result << found.miracle_painter if found }
-    result.freeze
-  end
-
-  # findbymessage のdeferred版。
-  def self.findbymessage_d(message)
-    result = Set.new
-    Gtk::TimeLine.timelines.deach{ |tl|
-      if not tl.destroyed?
-        found = tl.get_record_by_message(message)
-        result << found.miracle_painter if found end
-    }.next{
-      result.freeze }
-  end
-
-  def self.mp_modifier
-    @mp_modifier ||= lambda { |miracle_painter|
-      if (not miracle_painter.destroyed?) and (not miracle_painter.tree.destroyed?)
-        miracle_painter.tree.model.each{ |model, path, iter|
-          if iter[0] == miracle_painter.message.uri.to_s
-            miracle_painter.tree.queue_draw
-            break end } end
-      false } end
-=end
-
-  def initialize(model)
-    super()
-
-    @model = model
-    @mouse_in_row = false
-
-    # This widget create _Gdk::Window_ itself on _realize_.
-    self.has_window = true
-    self.redraw_on_allocate = true
-    style_context.add_class 'miraclepainter'
-  end
-
-  # override virtual function Gtk::Widget.get_request_mode
-  def do_get_request_mode
-    notice 'MiraclePainter#get_request_mode' if VERBOSE
-
-    Gtk::SizeRequestMode::HEIGHT_FOR_WIDTH
-  end
-
-  # override virtual function Gtk::Widget.get_preferred_width
-  def do_get_preferred_width
-    notice 'MiraclePainter#get_preferred_width' if VERBOSE
-
-    [WIDTH_MIN, WIDTH_NAT]
-  end
-
-  # override virtual function Gtk::Widget.get_preferred_height_for_width
-  def do_get_preferred_height_for_width(width)
-    notice 'MiraclePainter#get_preferred_height_for_width(' \
-      "width=#{width})" if VERBOSE
-
-    @width = width
-    height = mainpart_height + SPACING + subparts_height
-    [height, height] # minimum, natural
-  end
-
-  # connect signal Gtk::Widget*parent_set
-  def signal_do_parent_set(prev_parent)
-    notice "#{self}*parent_set(prev_parent=#{prev_parent.inspect}) " \
-      "parent=#{parent.inspect}" if VERBOSE
-
-    @width = allocated_width
-  end
-
-  # connect signal Gtk::Widget*size_allocate
-  # リサイズ時に呼ばれる
-  # signalの発行順序: size_allocate > realize > draw
-  def signal_do_size_allocate(rect)
-    notice "#{self}*size_allocate(rect=#{rect})" if VERBOSE
-
-    self.allocation = rect
-    x, y, w, h = rect.x, rect.y, rect.width, rect.height
-    realized? and window.move_resize x, y, w, h
-    @width = w
-  end
-
-  # connect signal Gtk::Widget*realize
-  def signal_do_realize
-    notice "#{self}*realize" if VERBOSE
-
-    x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
-    attr = (Gdk::WindowAttr.new w, h, :input_output, :child).tap do |attr|
-      attr.x = x
-      attr.y = y
-      attr.visual = visual
+      box = Gtk::EventBox.new
       em = Gdk::EventMask
-      attr.event_mask = em::BUTTON_PRESS_MASK |
-        em::BUTTON_RELEASE_MASK |
-        em::POINTER_MOTION_MASK |
-        em::ENTER_NOTIFY_MASK |
-        em::LEAVE_NOTIFY_MASK |
-        em::TOUCH_MASK
+      box.set_events em::BUTTON_PRESS_MASK | em::BUTTON_RELEASE_MASK
+      box.ssc :button_press_event do
+        activate
+        true
+      end
+      box.ssc :button_release_event do |_, ev|
+        ev.button == Gdk::BUTTON_SECONDARY and Plugin::GUI::Command.menu_pop
+        true
+      end
+      box << grid
+
+      self << box
     end
 
-    wat = Gdk::WindowAttributesType
-    mask = wat::X | wat::Y | wat::VISUAL
+    def build_text_view
+      @text_view.editable = false
+      @text_view.wrap_mode = :char
 
-    self.window = Gdk::Window.new parent_window, attr, mask
-    register_window window
+      provider = Gtk::CssProvider.new
+      provider.load_from_data 'textview, text { background: transparent; }'
+      @text_view.style_context.add_provider provider
 
-    self.realized = true
-  end
+      buffer = @text_view.buffer
 
-  # connect signal Gtk::Widget*unrealize
-  def signal_do_unrealize
-    notice "#{self}*unrealize" if VERBOSE
+      @link_notes = {}
+      score.select do |note|
+        note.respond_to? :reference or next true
+        !note.reference.respond_to?(:load_pixbuf)
+      end.reduce(buffer.start_iter) do |iter, note|
+        if note.respond_to? :inline_photo
+          offset = iter.offset
+          pixbuf = note.inline_photo.load_pixbuf(width: EMOJI_SIZE,
+                                                 height: EMOJI_SIZE) do |pb|
+            new_iter = buffer.get_iter_at offset: offset
+            end_iter = buffer.get_iter_at offset: offset + 1
+            buffer.delete new_iter, end_iter
+            buffer.insert_pixbuf new_iter, pb
+          end
+          notice iter
+          notice pixbuf
+          buffer.insert_pixbuf iter, pixbuf
 
-    unregister_window window
-    window.destroy
-    self.realized = false
-  end
+        elsif note.respond_to? :reference
+          tag = buffer.create_tag nil, [[:foreground, :blue], [:underline, :single]]
+          buffer.insert iter, note.description, tags: [tag]
+          @link_notes[tag.object_id] = note
 
-  # connect signal Gtk::Widget*map
-  def singla_do_map
-    super
+        else
+          buffer.insert iter, note.description
+        end
 
-    window.show
-  end
+        iter
+      end
 
-  # connect signal Gtk::Widget*unmap
-  def signal_do_unmap
-    super
+      @text_view.ssc :button_press_event do |_, ev|
+        x, y = @text_view.window_to_buffer_coords :widget, ev.x, ev.y
+        iter = @text_view.get_iter_at_location x, y
+        iter or activate
+        !iter # disable TextView's popup menu
+      end
 
-    window.hide
-  end
-
-  # connect signal Gtk::Widget*draw
-  def signal_do_draw(context)
-    # context => Cairo::Context
-    notice "#{self}*draw(context)" if VERBOSE
-
-    x, y, w, h = allocation.x, allocation.y, allocation.width, allocation.height
-
-    Gtk.render_frame style_context, context, x, y, w, h
-    Gtk.render_background style_context, context, x, y, w, h
-
-    render_to_context context
-    true # stop propagation
-  end
-
-  # connect signal Gtk::Widget*clicked
-  def signal_do_clicked(ev)
-    notice "#{self}*clicked(ev=#{ev.inspect})" if VERBOSE
-
-    x, y = ev.x, ev.y
-    case ev.button
-    when 1
-      iob_clicked(x, y)
-      if not textselector_range
-        index = main_pos_to_index(x, y)
-        if index
-          clicked_note = score.find{|note|
-            index -= note.description.size
-            index <= 0
-          }
-          Plugin.call(:open, clicked_note) if clickable?(clicked_note)
+      # make links clickable
+      @text_view.ssc :event_after do |_, ev|
+        if (ev.type == :button_release && ev.button == Gdk::BUTTON_PRIMARY) ||
+            ev.type == :touch_end
+          x, y = @text_view.window_to_buffer_coords :widget, ev.x, ev.y
+          iter = @text_view.get_iter_at_location(x, y) or next false
+          iter.tags.empty? and next false
+          note = @link_notes[iter.tags.first.object_id] or next false
+          Plugin.call :open, note
         end
       end
-    when 3
-      Plugin::GUI::Command.menu_pop
-    end
-  end
 
-  def signal_do_button_press_event(ev)
-    notice "#{self}*button_press_event(ev=#{ev.inspect})" if VERBOSE
-
-    return false if ev.button != 1
-    textselector_press(*main_pos_to_index_forclick(ev.x, ev.y)[1..2])
-    false # propagate event
-  end
-
-  def signal_do_button_release_event(ev)
-    notice "#{self}*button_release_event(ev=#{ev.inspect})" if VERBOSE
-
-    x, y = ev.x, ev.y
-    ev.button == 1 \
-      and textselector_release(*main_pos_to_index_forclick(x, y)[1..2])
-    @mouse_in_row || ev.event_type == Gdk::EventType::TOUCH_END \
-      and signal_emit :clicked, ev
-    false # propagate event
-  end
-
-  def signal_do_motion_notify_event(ev)
-    x, y = ev.x, ev.y
-    point_moved_main_icon(x, y)
-    textselector_select(*main_pos_to_index_forclick(x, y)[1..2])
-
-    # change cursor shape
-    window.cursor = Gdk::Cursor.new(cursor_name_of(x, y))
-    false # propagate event
-  end
-
-  def signal_do_enter_notify_event(_)
-    @mouse_in_row = true
-    false # propagate event
-  end
-
-  def signal_do_leave_notify_event(_)
-    @mouse_in_row = false
-    iob_main_leave
-    textselector_release
-    # restore cursor shape
-    window.cursor = nil
-    false # propagate event
-  end
-
-  def signal_do_state_flags_changed(prev_flags)
-    notice "#{self}*state_flags_changed(prev_flags=#{prev_flags.inspect}) " \
-      "state_flags=#{state_flags.inspect}" if VERBOSE
-
-    (state_flags & Gtk::StateFlags::SELECTED).zero? and textselector_unselect
-  end
-
-  def iob_icon_pixbuf
-    [ ["reply.png".freeze, message.user.verified? ? "verified.png" : "etc.png"],
-      [if message.user.protected? then "protected.png".freeze else "retweet.png".freeze end,
-       message.favorite? ? "unfav.png".freeze : "fav.png".freeze] ] end
-
-  def iob_icon_pixbuf_off
-    world, = Plugin.filtering(:world_current, nil)
-    [ [(UserConfig[:show_replied_icon] and message.mentioned_by_me? and "reply.png".freeze),
-       UserConfig[:show_verified_icon] && message.user.verified? && "verified.png"],
-      [ if UserConfig[:show_protected_icon] and message.user.protected?
-          "protected.png".freeze
-        elsif Plugin[:miracle_painter].shared?(message, world)
-          "retweet.png".freeze end,
-       message.favorite? ? "unfav.png".freeze : nil]
-    ]
-  end
-
-  def iob_reply_clicked
-    @tree.imaginary.create_reply_postbox(message) end
-
-  def iob_retweet_clicked
-    world, = Plugin.filtering(:world_current, nil)
-    if Plugin[:miracle_painter].shared?(message, world)
-      retweet = message.retweeted_statuses.find(&:from_me?)
-      retweet.destroy if retweet
-    else
-      Plugin[:miracle_painter].share(message, world)
-    end
-  end
-
-  def iob_fav_clicked
-    message.favorite(!message.favorite?)
-  end
-
-  def iob_etc_clicked
-  end
-
-  # つぶやきの左上座標から、クリックされた文字のインデックスを返す
-  def main_pos_to_index(x, y)
-    x -= main_text_rect.x
-    y -= main_text_rect.y
-    inside, byte, trailing = *main_message.xy_to_index(x * Pango::SCALE, y * Pango::SCALE)
-    main_message.text.get_index_from_byte(byte) if inside end
-
-  def main_pos_to_index_forclick(x, y)
-    x -= main_text_rect.x
-    y -= main_text_rect.y
-    result = main_message.xy_to_index(x * Pango::SCALE, y * Pango::SCALE)
-    result[1] = main_message.text.get_index_from_byte(result[1])
-    return *result end
-
-  @@font_description = Hash.new{|h,k| h[k] = {} } # {scale => {font => FontDescription}}
-  def font_description(font)
-    @@font_description[Gdk.scale(0xffff)][font] ||=
-      Pango::FontDescription.new(font).tap{|fd| fd.size = Gdk.scale(fd.size) }
-  end
-
-  def mainpart_height
-    [
-      main_message.pixel_size[1] + header_left.pixel_size[1],
-      ICON_SIZE[1],
-    ].max + MARGIN
-  end
-
-  def inspect
-    "MP(#{model.description[0, 5].gsub("\n", ' ').inspect})"
-  end
-  alias to_s inspect
-
-private
-
-  def main_icon_rect
-    @main_icon_rect ||= Rect.new(MARGIN, MARGIN, *ICON_SIZE)
-  end
-
-  # 本文(model#description)
-  def main_text_rect
-    Rect.new(
-      ICON_SIZE[0] + 2 * MARGIN,
-      header_text_rect.bottom,
-      @width - ICON_SIZE[0] - 4 * MARGIN,
-      0
-    )
-  end
-
-  def header_text_rect
-    Rect.new(
-      ICON_SIZE[0] + 2 * MARGIN,
-      MARGIN,
-      @width - ICON_SIZE[0] - 4 * MARGIN,
-      header_left.pixel_size[1]
-    )
-  end
-
-  # 本文のための Pango::Layout のインスタンスを返す
-  def main_message(context = nil)
-    layout = (context || self).create_pango_layout
-    font = Plugin.filtering(:message_font, message, nil).last
-    layout.font_description = font_description(font) if font
-    layout.text = '.' # dummy text
-    layout.width = main_text_rect.width * Pango::SCALE
-    layout.attributes = textselector_attr_list(
-      description_attr_list(emoji_height: layout.pixel_size[1])
-    )
-    layout.wrap = Pango::WrapMode::CHAR
-    rgb = Plugin.filtering(:message_font_color, message, nil).last || BLACK
-    context.set_source_rgb(*rgb) if context
-    layout.text = plain_description
-
-    return layout until layout.context
-    layout.context.set_shape_renderer do |c, shape, _|
-      return layout until photo = shape.data
-      width, height = shape.ink_rect.width/Pango::SCALE, shape.ink_rect.height/Pango::SCALE
-      # pixbuf = photo.load_pixbuf(width: width, height: height){ on_modify }
-      pixbuf = photo.load_pixbuf(width: width, height: height) do
-        queue_draw
+      # change cursor shape on links
+      default_cursor = Gdk::Cursor.new 'default'
+      text_cursor = Gdk::Cursor.new 'text'
+      pointer_cursor = Gdk::Cursor.new 'pointer'
+      hovering_over_link = false
+      @text_view.ssc :motion_notify_event do |_, ev|
+        x, y = @text_view.window_to_buffer_coords :widget, ev.x, ev.y
+        iter = @text_view.get_iter_at_location x, y
+        unless iter
+          hovering_over_link = false
+          window = @text_view.get_window :text
+          window.cursor = default_cursor
+          next false
+        end
+        hovering = !iter.tags.empty?
+        window = @text_view.get_window :text
+        window.cursor = hovering ? pointer_cursor : text_cursor
+        hovering_over_link = hovering
+        false
       end
-      x = layout.index_to_pos(shape.start_index).x / Pango::SCALE
-      y = layout.index_to_pos(shape.start_index).y / Pango::SCALE
-      c.translate(x, y)
-      c.set_source_pixbuf(pixbuf)
-      c.rectangle(0, 0, width, height)
-      c.fill
-    end
-    layout
-  end
 
-  # ヘッダ（左）のための Pango::Layout のインスタンスを返す
-  def header_left(context = nil)
-    attr_list, text = header_left_markup
-    rgb = Plugin.filtering(:message_header_left_font_color, message, nil).last || BLACK
-    font = Plugin.filtering(:message_header_left_font, message, nil).last
-    context&.set_source_rgb(*rgb)
-    (context || self).create_pango_layout.tap do |layout|
-      layout.attributes = attr_list
-      layout.font_description = font_description(font) if font
-      layout.text = text
-    end
-  end
-
-  def header_left_markup
-    user = message.user
-    if user.respond_to?(:idname)
-      Pango.parse_markup("<b>#{Pango.escape(rinsuki_abbr(user))}</b> #{Pango.escape(user.name || '')}")
-    else
-      Pango.parse_markup(Pango.escape(user.name || ''))
-    end
-  end
-
-  def rinsuki_abbr(user)
-    return user.idname unless UserConfig[:idname_abbr]
-    prefix, domain = user.idname.split('@', 2)
-    if domain
-      "#{prefix}@#{domain.gsub(NUMERONYM_MATCHER, &NUMERONYM_CONVERTER)}"
-    else
-      user.idname
-    end
-  end
-
-  # ヘッダ（右）のための Pango::Layout のインスタンスを返す
-  def header_right(context)
-    hms = timestamp_label
-    attr_list, text = Pango.parse_markup(hms)
-    layout = context.create_pango_layout
-    layout.attributes = attr_list
-    font = Plugin.filtering(:message_header_right_font, message, nil).last
-    layout.font_description = font_description(font) if font
-    layout.text = text
-    layout.alignment = Pango::Alignment::RIGHT
-    layout end
-
-  def timestamp_label
-    now = Time.now
-    if message.created.year == now.year && message.created.month == now.month && message.created.day == now.day
-      Pango.escape(message.created.strftime('%H:%M:%S'))
-    else
-      Pango.escape(message.created.strftime('%Y/%m/%d %H:%M:%S'))
-    end
-  end
-
-  # アイコンのpixbufを返す
-  def main_icon
-    w, h = ICON_SIZE
-    @main_icon ||= model.user.icon.load_pixbuf(width: w, height: h) do |pb|
-      @main_icon = pb
-      queue_draw
-    end
-  end
-
-  # 背景色を返す
-  def get_backgroundcolor
-    color = Plugin.filtering(
-      selected? ? :message_selected_bg_color : :message_bg_color,
-      model, nil
-    ).last || WHITE
-  end
-
-  # Graphic Context にパーツを描画
-  def render_to_context(context)
-    render_background context
-    render_main_icon context
-    render_main_text context
-    render_parts context end
-
-  def render_background(context)
-    context.save do
-      context.set_source_rgb(*get_backgroundcolor)
-      context.rectangle(0, 0, allocation.width, allocation.height)
-      context.fill
-      if Gtk.konami
-        context.save do
-          context.translate(width - 48, height - 54)
-          context.set_source_pixbuf(Gtk.konami_image)
-          context.paint end end end end
-
-  def render_main_icon(context)
-    case Plugin.filtering(:main_icon_form, :square)[0]
-    when :aspectframe
-      render_main_icon_aspectframe(context)
-    else
-      render_main_icon_square(context)
-    end
-  end
-
-  def render_main_icon_square(context)
-    context.save{
-      context.translate(main_icon_rect.x, main_icon_rect.y)
-      context.set_source_pixbuf(main_icon)
-      context.paint
-    }
-    if not (message.system?)
-      render_icon_over_button(context) end
-  end
-
-  def render_main_icon_aspectframe(context)
-    context.save do
-      context.save do
-        context.translate(main_icon_rect.x, main_icon_rect.y + icon_height*13/14)
-        # context.set_source_pixbuf(gb_foot.load_pixbuf(width: icon_width, height: icon_width*9/20){|_pb, _s| on_modify })
-        w, = ICON_SIZE
-        context.set_source_pixbuf(
-          gb_foot.load_pixbuf(width: w, height: 9 / 20 * w) { queue_draw }
-        )
-        context.paint
+      @text_view.ssc :button_release_event do |_, ev|
+        ev.button == Gdk::BUTTON_SECONDARY or next false
+        Plugin::GUI::Command.menu_pop
+        true
       end
-      context.translate(main_icon_rect.x, main_icon_rect.y)
-      context.append_path(Cairo::SpecialEdge.path(*ICON_SIZE))
-      context.set_source_rgb(0,0,0)
-      context.stroke
-      context.append_path(Cairo::SpecialEdge.path(*ICON_SIZE))
-      context.set_source_pixbuf(main_icon)
-      context.fill
     end
-    if not (message.system?)
-      render_icon_over_button(context) end
-  end
 
-  def render_main_text(context)
-    context.save{
-      context.translate(header_text_rect.x, header_text_rect.y)
-      context.set_source_rgb(0,0,0)
-      hl_layout = header_left(context)
-      context.show_pango_layout(hl_layout)
-      hr_layout = header_right(context)
-      hr_color = Plugin.filtering(:message_header_right_font_color, message, nil).last || BLACK
+    def build_iob
 
-      @hl_region = Cairo::Region.new([header_text_rect.x, header_text_rect.y,
-                                      hl_layout.size[0] / Pango::SCALE, hl_layout.size[1] / Pango::SCALE])
-      @hr_region = Cairo::Region.new([header_text_rect.x + header_text_rect.width - (hr_layout.size[0] / Pango::SCALE), header_text_rect.y,
-                                      hr_layout.size[0] / Pango::SCALE, hr_layout.size[1] / Pango::SCALE])
+    end
 
-      context.save{
-        context.translate(header_text_rect.width - (hr_layout.size[0] / Pango::SCALE), 0)
-        if (hl_layout.size[0] / Pango::SCALE) > (header_text_rect.width - (hr_layout.size[0] / Pango::SCALE) - 20)
-          r, g, b = get_backgroundcolor
-          grad = Cairo::LinearPattern.new(-20, 0, hr_layout.size[0] / Pango::SCALE + 20, 0)
-          grad.add_color_stop_rgba(0.0, r, g, b, 0.0)
-          grad.add_color_stop_rgba(20.0 / (hr_layout.size[0] / Pango::SCALE + 20), r, g, b, 1.0)
-          grad.add_color_stop_rgba(1.0, r, g, b, 1.0)
-          context.rectangle(-20, 0, hr_layout.size[0] / Pango::SCALE + 20, hr_layout.size[1] / Pango::SCALE)
-          context.set_source(grad)
-          context.fill() end
-        context.set_source_rgb(*hr_color)
-        context.show_pango_layout(hr_layout) } }
-    context.save{
-      context.translate(main_text_rect.x, main_text_rect.y)
-      context.show_pango_layout(main_message(context)) } end
+    def build_subparts
+      grid = Gtk::Grid.new
+      grid.column_spacing = 6
 
-  # このMiraclePainterの(x , y)にマウスポインタがある時に表示すべきカーソルの名前を返す。
-  # ==== Args
-  # [x] x座標(Integer)
-  # [y] y座標(Integer)
-  # ==== Return
-  # [String] カーソルの名前
-  def cursor_name_of(x, y)
-    index = main_pos_to_index(x, y)
-    if index # the cursor is placed on text
-      pointed_note = score.find{|note|
-        index -= note.description.size
-        index <= 0
-      }
-      if clickable?(pointed_note)
-        # the cursor is placed on link
-        'pointer'
+      score.select do |note|
+        note.respond_to? :reference or next false
+        note.reference.respond_to? :load_pixbuf or next false
+      end.each do |note|
+        photo = note.reference
+        image = Gtk::Image.new
+        height = UserConfig[:gtk3_photo_height]
+        image.pixbuf = photo.load_pixbuf(width: height * 3, height: height) do |pb|
+          image.pixbuf = pb
+        end
+
+        box = Gtk::EventBox.new
+        box << image
+        em = Gdk::EventMask
+        box.set_events em::BUTTON_RELEASE_MASK |
+                       em::ENTER_NOTIFY_MASK |
+                       em::LEAVE_NOTIFY_MASK
+        box.ssc :button_release_event do |_, ev|
+          ev.button == Gdk::BUTTON_PRIMARY or next false
+          Plugin.call :open, photo
+          true
+        end
+        pointer = Gdk::Cursor.new 'pointer'
+        default = Gdk::Cursor.new 'default'
+        box.ssc :enter_notify_event do
+          box.window.cursor = pointer
+        end
+        box.ssc :leave_notify_event do
+          box.window.cursor = default
+        end
+
+        grid << box
+      end
+
+      sw = Gtk::ScrolledWindow.new
+      sw.set_policy :automatic, :never
+      sw.halign = :fill
+      sw.hexpand = true
+      sw << grid
+
+      @subparts_grid << sw
+    end
+
+    def timestamp_text
+      now = Time.now
+      if model.created.year == now.year &&
+          model.created.month == now.month &&
+          model.created.day == now.day
+        Pango.escape(model.created.strftime('%H:%M:%S'))
       else
-        'text'
+        Pango.escape(model.created.strftime('%Y/%m/%d %H:%M:%S'))
       end
-    else
-      'default'
     end
-  end
 
-  def gb_foot
-    self.class.gb_foot
-  end
+    def header_markup
+      user = model.user
+      name = Pango.escape(user.name || '')
+      if user.respond_to?(:idname)
+        idname = Pango.escape(rinsuki_abbr(user))
+        "<b>#{idname}</b> #{name}"
+      else
+        name
+      end
+    end
 
-  class << self
-    def gb_foot
-      @gb_foot ||= Plugin.collect(:photo_filter, Cairo::SpecialEdge::FOOTER_URL, Pluggaloid::COLLECT).first
+    def rinsuki_abbr(user)
+      return user.idname unless UserConfig[:idname_abbr]
+      prefix, domain = user.idname.split('@', 2)
+      if domain
+        "#{prefix}@#{domain.gsub(NUMERONYM_MATCHER, &NUMERONYM_CONVERTER)}"
+      else
+        user.idname
+      end
     end
   end
 end
