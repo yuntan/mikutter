@@ -239,12 +239,8 @@ module Plugin::Gtk3
           true
         end
         pointer = Gdk::Cursor.new 'pointer'
-        default = Gdk::Cursor.new 'default'
         box.ssc :enter_notify_event do
           box.window.cursor = pointer
-        end
-        box.ssc :leave_notify_event do
-          box.window.cursor = default
         end
 
         grid << box
