@@ -445,23 +445,27 @@ Plugin.create :gtk3 do
 
   on_gui_child_activated do |i_parent, i_child, activated_by_toolkit|
     type_strict i_parent => Plugin::GUI::HierarchyParent, i_child => Plugin::GUI::HierarchyChild
-    if !activated_by_toolkit
-      if i_child.is_a?(Plugin::GUI::TabLike)
-        i_pane = i_parent
-        i_tab = i_child
-        pane = widgetof(i_pane)
-        tab = widgetof(i_tab)
-        pane && tab and pane.page = pane.get_tab_pos_by_tab(tab)
-      elsif i_parent.is_a?(Plugin::GUI::Window)
-        i_term = i_child.respond_to?(:active_chain) ? i_child.active_chain.last : i_child
-        if i_term
-          window = widgetof(i_parent)
-          widget = widgetof(i_term)
-          if window and widget
-            if widget.respond_to? :active
-              widget.active
-            else
-              window.set_focus(widget) end end end end end end
+    activated_by_toolkit or next
+
+    if i_child.is_a?(Plugin::GUI::TabLike)
+      i_pane = i_parent
+      i_tab = i_child
+      pane = widgetof(i_pane)
+      tab = widgetof(i_tab)
+      pane && tab and pane.page = pane.get_tab_pos_by_tab(tab)
+    elsif i_parent.is_a?(Plugin::GUI::Window)
+      i_term = if i_child.respond_to?(:active_chain)
+                 i_child.active_chain.last 
+               else
+                 i_child
+               end
+      i_term or next
+
+      window = widgetof(i_parent)
+      widget = widgetof(i_term)
+      widget&.can_focus? and window&.focus = widget
+    end
+  end
 
   on_posted do |service, messages|
     messages.each{ |message|
