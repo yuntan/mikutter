@@ -164,15 +164,18 @@ module Plugin::Gtk3
         iter
       end
 
-      @text_view.ssc :button_press_event do |_, ev|
-        x, y = @text_view.window_to_buffer_coords :widget, ev.x, ev.y
-        iter = @text_view.get_iter_at_location x, y
-        iter or activate
-        !iter # disable TextView's popup menu
+      @text_view.ssc :button_press_event do
+        activate
+        true # disable TextView's popup menu
       end
 
-      # make links clickable
+      @text_view.ssc :button_release_event do |_, ev|
+        ev.button == Gdk::BUTTON_SECONDARY and Plugin::GUI::Command.menu_pop
+        true
+      end
+
       @text_view.ssc :event_after do |_, ev|
+        # make links clickable
         if (ev.type == :button_release && ev.button == Gdk::BUTTON_PRIMARY) ||
             ev.type == :touch_end
           x, y = @text_view.window_to_buffer_coords :widget, ev.x, ev.y
@@ -202,12 +205,6 @@ module Plugin::Gtk3
         window.cursor = hovering ? pointer_cursor : text_cursor
         hovering_over_link = hovering
         false
-      end
-
-      @text_view.ssc :button_release_event do |_, ev|
-        ev.button == Gdk::BUTTON_SECONDARY or next false
-        Plugin::GUI::Command.menu_pop
-        true
       end
     end
 
