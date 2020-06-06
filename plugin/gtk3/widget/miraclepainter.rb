@@ -93,6 +93,7 @@ module Plugin::Gtk3
                 .pack_end(timestamp_label)
 
       @subparts_grid = Gtk::Grid.new
+      @subparts_grid.orientation = :vertical
       @subparts_grid.halign = :fill
       @subparts_grid.expand = true
       build_subparts
@@ -259,6 +260,12 @@ module Plugin::Gtk3
       sw << grid
 
       @subparts_grid << sw
+
+      Plugin.collect(:subparts_widgets, model).each do |w|
+        w.halign = :fill
+        w.hexpand = true
+        @subparts_grid << w
+      end
     end
 
     def timestamp_text

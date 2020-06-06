@@ -1,0 +1,9 @@
+---
+slug: :subparts
+depends:
+  plugin:
+    - gtk3
+version: '1.0'
+author: yuntan_t
+name: Subparts
+description: モデルにより異なるウィジェットをMiraclePainterに追加するためのプラグイン

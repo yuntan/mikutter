@@ -1,0 +1,9 @@
+---
+slug: :mastodon_subparts
+depends:
+  plugin:
+  - gtk3
+  - subparts
+version: '1.0'
+name: Mastodon Subparts
+description: Mastodon Status用のSubparts
