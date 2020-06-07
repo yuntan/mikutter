@@ -135,10 +135,7 @@ module Plugin::Gtk3
       buffer = @text_view.buffer
 
       @link_notes = {}
-      score.select do |note|
-        note.respond_to? :reference or next true
-        !note.reference.respond_to?(:load_pixbuf)
-      end.reduce(buffer.start_iter) do |iter, note|
+      score.reduce(buffer.start_iter) do |iter, note|
         if note.respond_to? :inline_photo
           offset = iter.offset
           pixbuf = note.inline_photo.load_pixbuf(width: EMOJI_SIZE,
@@ -148,8 +145,6 @@ module Plugin::Gtk3
             buffer.delete new_iter, end_iter
             buffer.insert_pixbuf new_iter, pb
           end
-          notice iter
-          notice pixbuf
           buffer.insert_pixbuf iter, pixbuf
 
         elsif note.respond_to? :reference
