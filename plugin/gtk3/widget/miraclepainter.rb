@@ -28,10 +28,11 @@ module Plugin::Gtk3
     attr_reader :model
     alias message model
 
-    def initialize(model)
+    def initialize(model, as_subparts: false)
       super()
 
       @model = model
+      @as_subparts = as_subparts
 
       build
     end
@@ -47,7 +48,6 @@ module Plugin::Gtk3
     end
 
     def signal_do_focus_in
-      notice 'b'
       parent.focus
     end
 
@@ -59,7 +59,8 @@ module Plugin::Gtk3
 
     def build
       avatar_image = Gtk::Image.new
-      avatar_size = UserConfig[:gtk3_avatar_size]
+      avatar_size = @as_subparts ? UserConfig[:gtk3_subparts_avatar_size]
+                                 : UserConfig[:gtk3_avatar_size]
       avatar_image.pixbuf = model.user.icon.load_pixbuf(
         width: avatar_size, height: avatar_size
       ) do |pb|
@@ -92,21 +93,25 @@ module Plugin::Gtk3
       header_box.pack_start(header_label, fill: true, expand: true)
                 .pack_end(timestamp_label)
 
-      @subparts_grid = Gtk::Grid.new
-      @subparts_grid.orientation = :vertical
-      @subparts_grid.halign = :fill
-      @subparts_grid.expand = true
-      build_subparts
+      unless @as_subparts
+        @subparts_grid = Gtk::Grid.new
+        @subparts_grid.orientation = :vertical
+        @subparts_grid.halign = :fill
+        @subparts_grid.expand = true
+        build_subparts
+      end
 
       grid = Gtk::Grid.new
-      grid.margin = MARGIN
+      grid.margin = MARGIN unless @as_subparts
       grid.row_spacing = SPACING
       grid.column_spacing = SPACING
 
       grid.attach_next_to avatar_box, nil, :bottom, 1, 2
       grid.attach_next_to header_box, avatar_box, :right, 1, 1
       grid.attach_next_to @text_view, header_box, :bottom, 1, 1
-      grid.attach_next_to @subparts_grid, avatar_box, :bottom, 2, 1
+      unless @as_subparts
+        grid.attach_next_to @subparts_grid, avatar_box, :bottom, 2, 1
+      end
 
       box = Gtk::EventBox.new
       em = Gdk::EventMask
@@ -143,9 +148,9 @@ module Plugin::Gtk3
             new_iter = buffer.get_iter_at offset: offset
             end_iter = buffer.get_iter_at offset: offset + 1
             buffer.delete new_iter, end_iter
-            buffer.insert_pixbuf new_iter, pb
+            buffer.insert new_iter, pb
           end
-          buffer.insert_pixbuf iter, pixbuf
+          buffer.insert iter, pixbuf
 
         elsif note.respond_to? :reference
           tag = buffer.create_tag nil, [[:foreground, :blue], [:underline, :single]]
