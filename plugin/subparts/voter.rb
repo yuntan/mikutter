@@ -39,10 +39,14 @@ module Plugin::Subparts
       end
 
       label = Gtk::Label.new count.to_s
+      label.width_request = ICON_SIZE
 
       self << image << label
 
-      voters.each(&method(:add_icon))
+      voters.next do |voters|
+        voters.first(20).each(&method(:add_icon))
+        show_all
+      end.trap { |err| error err }
     end
 
     def add_icon(voter)
