@@ -208,47 +208,6 @@ module Plugin::Gtk3
     end
 
     def build_subparts
-      grid = Gtk::Grid.new
-      grid.column_spacing = 6
-
-      score.select do |note|
-        note.respond_to? :reference or next false
-        note.reference.respond_to? :load_pixbuf or next false
-      end.each do |note|
-        photo = note.reference
-        image = Gtk::Image.new
-        height = UserConfig[:gtk3_photo_height]
-        image.pixbuf = photo.load_pixbuf(width: height * 3, height: height) do |pb|
-          image.pixbuf = pb
-        end
-
-        box = Gtk::EventBox.new
-        box << image
-        em = Gdk::EventMask
-        box.set_events em::BUTTON_RELEASE_MASK |
-                       em::ENTER_NOTIFY_MASK |
-                       em::LEAVE_NOTIFY_MASK
-        box.ssc :button_release_event do |_, ev|
-          ev.button == Gdk::BUTTON_PRIMARY or next false
-          Plugin.call :open, photo
-          true
-        end
-        pointer = Gdk::Cursor.new 'pointer'
-        box.ssc :enter_notify_event do
-          box.window.cursor = pointer
-        end
-
-        grid << box
-      end
-
-      sw = Gtk::ScrolledWindow.new
-      sw.set_policy :automatic, :never
-      sw.halign = :fill
-      sw.hexpand = true
-      sw << grid
-
-      @subparts_grid << sw
-
       Plugin.collect(:subparts_widgets, model).each do |w|
         w.halign = :fill
         w.hexpand = true
