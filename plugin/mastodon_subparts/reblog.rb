@@ -7,10 +7,14 @@ module Plugin::MastodonSubparts
     end
 
     def initialize(model)
-      super
+      @model = model
+
+      super()
 
       self.class.instances[model.uri] = self
     end
+
+    attr_reader :model
 
     def icon
       ::Skin[:retweet]
@@ -20,8 +24,8 @@ module Plugin::MastodonSubparts
       model.actual_status.reblogs_count
     end
 
-    def voters
-      model.actual_status.reblogged_by
+    def voters_d
+      model.actual_status.reblogged_by_d
     end
   end
 end

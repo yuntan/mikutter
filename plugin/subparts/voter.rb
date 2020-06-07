@@ -5,22 +5,18 @@ module Plugin::Subparts
     ICON_SIZE = 24
     SPACING = 3
 
-    def initialize(model)
+    def initialize()
       super()
 
       self.orientation = :horizontal
       self.column_spacing = SPACING
 
-      @model = model
-
       build
     end
 
-    attr_reader :model
-
     def icon; end
     def count; end
-    def voters; end
+    def voters_d; end
 
     def changed
       children.each { |child| remove child }
@@ -43,7 +39,7 @@ module Plugin::Subparts
 
       self << image << label
 
-      voters.next do |voters|
+      voters_d.next do |voters|
         voters.first(20).each(&method(:add_icon))
         show_all
       end.trap { |err| error err }

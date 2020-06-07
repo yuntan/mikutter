@@ -299,7 +299,7 @@ module Plugin::Mastodon
       reblog.is_a? Status
     end
 
-    def reblogged_by
+    def reblogged_by_d
       accounts = actual_status.reblog_status_uris.map{|pair| pair[:acct] }.compact.uniq.map{|acct| Account.findbyacct(acct) }.compact
       Deferred.new do
         resp = +API.call(:get, domain, "/api/v1/statuses/#{id}/reblogged_by")
@@ -319,7 +319,7 @@ module Plugin::Mastodon
 
     alias :retweeted? :shared?
 
-    def favourited_by
+    def favourited_by_d
       accounts = @favorite_accts.map{|acct| Account.findbyacct(acct) }.compact.uniq
       Deferred.new do
         resp = +API.call(:get, domain, "/api/v1/statuses/#{id}/favourited_by")

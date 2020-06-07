@@ -7,10 +7,14 @@ module Plugin::MastodonSubparts
     end
 
     def initialize(model)
-      super
+      @model = model
+
+      super()
 
       self.class.instances[model.uri] = self
     end
+
+    attr_reader :model
 
     def icon
       ::Skin[:unfav]
@@ -20,8 +24,8 @@ module Plugin::MastodonSubparts
       model.favourites_count
     end
 
-    def voters
-      model.favourited_by
+    def voters_d
+      model.favourited_by_d
     end
   end
 end
