@@ -2,8 +2,9 @@
 slug: :mastodon_subparts
 depends:
   plugin:
-  - gtk3
   - subparts
+author:
+- yuntan_t
 version: '1.0'
 name: Mastodon Subparts
 description: Mastodon Status用のSubparts

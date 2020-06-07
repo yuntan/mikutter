@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Plugin::MastodonSubparts
-  class Share < Plugin::Subparts::Voter
+  class Reblog < Plugin::Subparts::Voter
     def self.instances
       @@instances ||= {}
     end
@@ -17,11 +17,11 @@ module Plugin::MastodonSubparts
     end
 
     def count
-      model.retweet_count
+      model.actual_status.reblogs_count
     end
 
     def voters
-      model.retweeted_by
+      model.actual_status.reblogged_by
     end
   end
 end

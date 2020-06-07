@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require_relative 'favorite'
-require_relative 'share'
+require_relative 'reblog'
 
 Plugin.create :mastodon_subparts do
   pm = Plugin::MastodonSubparts
 
   filter_subparts_widgets do |status, yielder|
     status.class == Plugin::Mastodon::Status or next [status, yielder]
-    [pm::Favorite, pm::Share].each do |klass|
+    [pm::Favorite, pm::Reblog].each do |klass|
       yielder << klass.new(status)
     end
     [status, yielder]
@@ -24,7 +24,7 @@ Plugin.create :mastodon_subparts do
   on_unfavorite(&update_favorite)
 
   update_share = proc do |_, status|
-    pm::Share.instances[status.uri]&.changed
+    pm::Reblog.instances[status.uri]&.changed
   end
 
   on_share(&update_share)

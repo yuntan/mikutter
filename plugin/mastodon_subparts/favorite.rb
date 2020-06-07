@@ -17,11 +17,11 @@ module Plugin::MastodonSubparts
     end
 
     def count
-      model.favorite_count
+      model.favourites_count
     end
 
     def voters
-      model.actual_status.favorited_by
+      model.favourited_by
     end
   end
 end
