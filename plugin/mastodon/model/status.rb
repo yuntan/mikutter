@@ -299,8 +299,12 @@ module Plugin::Mastodon
       reblog.is_a? Status
     end
 
-    def retweeted_by
-      actual_status.reblog_status_uris.map{|pair| pair[:acct] }.compact.uniq.map{|acct| Account.findbyacct(acct) }.compact
+    def reblogged_by
+      accounts = actual_status.reblog_status_uris.map{|pair| pair[:acct] }.compact.uniq.map{|acct| Account.findbyacct(acct) }.compact
+      Deferred.new do
+        resp = +API.call(:get, domain, "/api/v1/statuses/#{id}/reblogged_by")
+        (accounts + resp.value.map(&Account.method(:new))).uniq
+      end
     end
 
     def shared?(counterpart=nil)
@@ -315,8 +319,12 @@ module Plugin::Mastodon
 
     alias :retweeted? :shared?
 
-    def favorited_by
-      @favorite_accts.map{|acct| Account.findbyacct(acct) }.compact.uniq
+    def favourited_by
+      accounts = @favorite_accts.map{|acct| Account.findbyacct(acct) }.compact.uniq
+      Deferred.new do
+        resp = +API.call(:get, domain, "/api/v1/statuses/#{id}/favourited_by")
+        (accounts + resp.value.map(&Account.method(:new))).uniq
+      end
     end
 
     def favorite?(counterpart = nil)
