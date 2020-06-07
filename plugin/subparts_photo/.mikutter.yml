@@ -1,0 +1,10 @@
+---
+slug: :subparts_photo
+depends:
+  plugin:
+  - subparts
+author:
+- yuntan_t
+version: '1.0'
+name: Subparts Photo
+description: タイムライン内画像表示
