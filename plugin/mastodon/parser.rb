@@ -76,13 +76,8 @@ module Plugin::Mastodon::Parser
           !urls.include?(attachment.url.to_s) && !urls.include?(attachment.text_url.to_s)
         }
         .each {|attachment|
-          score << Plugin::Score::TextNote.new(description: "\n")
-
-          description = attachment.text_url
-          if !description
-            description = attachment.url
-          end
-          score << Plugin::Score::HyperLinkNote.new(description: description, uri: attachment.url)
+          photo = Plugin.collect(:photo_filter, attachment.url).first
+          score << Plugin::Score::HyperLinkNote.new(description: '', uri: attachment.url, reference: photo)
         }
     end
 
