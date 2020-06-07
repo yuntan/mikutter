@@ -3,6 +3,7 @@ slug: :mastodon_subparts
 depends:
   plugin:
   - subparts
+  - subparts_photo
 author:
 - yuntan_t
 version: '1.0'
