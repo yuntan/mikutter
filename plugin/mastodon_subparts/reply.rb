@@ -10,9 +10,7 @@ module Plugin::MastodonSubparts
 
     def model_d
       Deferred.new do
-        if @child_model.in_reply_to_id
-          +@child_model.replyto_source_d(true)
-        end
+        +@child_model.replyto_source_d(true) if @child_model.in_reply_to_id
       end
     end
   end
