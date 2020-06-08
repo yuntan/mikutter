@@ -6,21 +6,28 @@ module Plugin::Subparts
       super()
       self.selection_mode = :none
 
+      provider = Gtk::CssProvider.new
+      provider.load_from_data 'list { background: transparent; }'
+      style_context.add_provider provider
+
       model_d.next do |model|
-        @model = model
-        if model
-          self << build_row
-          show_all
-        end
+        next unless model
+
+        self << build_row(model)
+        show_all
       end.trap { |err| error err }
     end
 
-    attr_reader :model
-
     def model_d; end
 
-    def build_row
-      Plugin::Gtk3::MiraclePainter.new model, as_subparts: true
+  private
+
+    def build_row(model)
+      row = Plugin::Gtk3::MiraclePainter.new model, as_subparts: true
+      ssc :row_activated do
+        Plugin.call :open, model
+      end
+      row
     end
   end
 end

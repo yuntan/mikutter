@@ -37,15 +37,21 @@ module Plugin::Subparts
       label = Gtk::Label.new count.to_s
       label.width_request = ICON_SIZE
 
-      self << image << label
+      sw = Gtk::ScrolledWindow.new
+      sw.set_policy :external, :never
+      sw.hexpand = true
+
+      grid = Gtk::Grid.new
+
+      self << image << label << (sw << grid)
 
       voters_d.next do |voters|
-        voters.first(20).each(&method(:add_icon))
+        voters.first(20).each { |voter| grid << build_icon(voter) }
         show_all
       end.trap { |err| error err }
     end
 
-    def add_icon(voter)
+    def build_icon(voter)
       image = Gtk::Image.new
       image.tooltip_text = voter.name
       size = ICON_SIZE
@@ -54,8 +60,9 @@ module Plugin::Subparts
       end
 
       box = Gtk::EventBox.new
+      box.visible_window = false
       em = Gdk::EventMask
-      box.set_events em::BUTTON_RELEASE_MASK | em::ENTER_NOTIFY_MASK
+      box.events = em::BUTTON_RELEASE_MASK | em::ENTER_NOTIFY_MASK
       box.ssc :button_release_event do |_, ev|
         ev.button == Gtk::BUTTON_PRIMARY or next
 
@@ -66,7 +73,7 @@ module Plugin::Subparts
         box.window.cursor = pointer
       end
 
-      self << (box << image)
+      box << image
     end
   end
 end
