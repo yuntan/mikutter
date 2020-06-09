@@ -27,7 +27,7 @@ module Plugin::SubpartsPhoto
            .each do |note|
         photo = note.reference
         image = Gtk::Image.new
-        height = UserConfig[:gtk3_photo_height]
+        height = UserConfig[:subparts_photo_height]
         image.pixbuf = photo.load_pixbuf(width: height * 3, height: height) do |pb|
           image.pixbuf = pb
         end
