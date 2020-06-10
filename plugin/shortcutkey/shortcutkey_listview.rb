@@ -149,7 +149,7 @@ module Plugin::Shortcutkey
         c_box = command_box(values)
         c_box.expand = true
         grid << key_box(values) << world_box(values) << c_box
-      end)
+      end) << box
 
       window << grid
       window.show_all
@@ -161,7 +161,9 @@ module Plugin::Shortcutkey
           throw :validate, @plugin._("キーバインドを選択してください") unless (values[COLUMN_KEYBIND] && values[COLUMN_KEYBIND] != "")
           throw :validate, @plugin._("コマンドを選択してください") unless values[COLUMN_SLUG]
           result = values
-          window.destroy }
+          window.destroy
+          nil
+        }
         if error
           dialog = ::Gtk::MessageDialog.new(window,
                                             ::Gtk::Dialog::DESTROY_WITH_PARENT,
