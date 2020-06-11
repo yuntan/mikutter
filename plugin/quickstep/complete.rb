@@ -9,7 +9,9 @@ module Plugin::Quickstep
       @col_kind = ::Gtk::TreeViewColumn.new("", ::Gtk::CellRendererText.new, text: Plugin::Quickstep::Store::COL_KIND)
       @col_kind.set_sizing(Gtk::TreeViewColumn::FIXED)
       append_column @col_kind
-      append_column ::Gtk::TreeViewColumn.new("", ::Gtk::CellRendererText.new, text: Plugin::Quickstep::Store::COL_TITLE)
+      text = ::Gtk::CellRendererText.new
+      text.ellipsize = :end
+      append_column ::Gtk::TreeViewColumn.new("", text, text: Plugin::Quickstep::Store::COL_TITLE)
 
       set_enable_search(false)
       set_headers_visible(false)
