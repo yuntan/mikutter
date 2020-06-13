@@ -136,6 +136,7 @@ module Plugin::Gtk3
     def build_text_view
       @text_view.editable = false
       @text_view.wrap_mode = :char
+      @text_view.populate_all = true
 
       # set background color of TextView
       provider = Gtk::CssProvider.new
@@ -194,9 +195,9 @@ module Plugin::Gtk3
       end
 
       @text_view.ssc :populate_popup do |_, menu|
+        menu.children.each { |w| menu.remove w } # remove all
         i_timeline = get_ancestor(Timeline).imaginary
         event, items = Plugin::GUI::Command.get_menu_items i_timeline
-        menu.append Gtk::SeparatorMenuItem.new unless items.empty?
         Gtk::ContextMenu.new(*items).build!(i_timeline, event, menu).show_all
       end
 
@@ -224,11 +225,18 @@ module Plugin::Gtk3
           hovering_over_link = false
           window = @text_view.get_window :text
           window.cursor = default_cursor
+          @text_view.tooltip_text = ''
           next false
         end
         hovering = !iter.tags.empty?
         window = @text_view.get_window :text
         window.cursor = hovering ? pointer_cursor : text_cursor
+        if iter.tags.empty?
+          @text_view.tooltip_text = ''
+        else
+          note = @link_notes[iter.tags.first.object_id]
+          @text_view.tooltip_text = note.title if note
+        end
         hovering_over_link = hovering
         false
       end
