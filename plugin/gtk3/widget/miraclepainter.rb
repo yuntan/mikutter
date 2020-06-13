@@ -115,13 +115,17 @@ module Plugin::Gtk3
 
       box = Gtk::EventBox.new
       em = Gdk::EventMask
-      box.set_events em::BUTTON_PRESS_MASK | em::BUTTON_RELEASE_MASK
-      box.ssc :button_press_event do
+      box.events |= em::BUTTON_PRESS_MASK
+      box.ssc :button_press_event do |_, ev|
         activate
-        true
-      end
-      box.ssc :button_release_event do |_, ev|
-        ev.button == Gdk::BUTTON_SECONDARY and Plugin::GUI::Command.menu_pop
+        next unless ev.button == Gdk::BUTTON_SECONDARY
+
+        i_timeline = get_ancestor(Timeline).imaginary
+        event, items = Plugin::GUI::Command.get_menu_items i_timeline
+        menu = Gtk::Menu.new
+        menu.attach_to_widget self
+        Gtk::ContextMenu.new(*items).build!(i_timeline, event, menu).show_all
+        menu.popup_at_pointer ev
         true
       end
       box << grid
@@ -166,12 +170,14 @@ module Plugin::Gtk3
 
       @text_view.ssc :button_press_event do
         activate
-        true # disable TextView's popup menu
+        false
       end
 
-      @text_view.ssc :button_release_event do |_, ev|
-        ev.button == Gdk::BUTTON_SECONDARY and Plugin::GUI::Command.menu_pop
-        true
+      @text_view.ssc :populate_popup do |_, menu|
+        i_timeline = get_ancestor(Timeline).imaginary
+        event, items = Plugin::GUI::Command.get_menu_items i_timeline
+        menu.append Gtk::SeparatorMenuItem.new unless items.empty?
+        Gtk::ContextMenu.new(*items).build!(i_timeline, event, menu).show_all
       end
 
       @text_view.ssc :event_after do |_, ev|
