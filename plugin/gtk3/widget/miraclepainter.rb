@@ -157,7 +157,9 @@ module Plugin::Gtk3
           buffer.insert iter, pixbuf
 
         elsif note.respond_to? :reference
-          tag = buffer.create_tag nil, [[:foreground, :blue], [:underline, :single]]
+          link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
+          rgba = link_label.style_context.get_color Gtk::StateFlags::NORMAL
+          tag = buffer.create_tag nil, [[:foreground, rgba.to_s], [:underline, :single]]
           buffer.insert iter, note.description, tags: [tag]
           @link_notes[tag.object_id] = note
 
