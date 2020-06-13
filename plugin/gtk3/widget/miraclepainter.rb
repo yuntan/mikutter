@@ -136,14 +136,22 @@ module Plugin::Gtk3
     def build_text_view
       @text_view.editable = false
       @text_view.wrap_mode = :char
+      @text_view.populate_all = true
 
-      # provider = Gtk::CssProvider.new
-      # provider.load_from_data 'textview, text { background: transparent; }'
-      # @text_view.style_context.add_provider provider
+      # set background color of TextView
+      provider = Gtk::CssProvider.new
+      provider.load_from_data 'textview, text { background: transparent; }'
+      @text_view.style_context.add_provider provider
 
       buffer = @text_view.buffer
 
       @link_notes = {}
+
+      # get link color
+      # see https://stackoverflow.com/a/56415144/2707413
+      link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
+      link_color = link_label.style_context.get_color(:normal).to_s
+
       score.reduce(buffer.start_iter) do |iter, note|
         if note.respond_to? :inline_photo
           offset = iter.offset
@@ -156,10 +164,9 @@ module Plugin::Gtk3
           end
           buffer.insert iter, pixbuf
 
-        elsif note.respond_to? :reference
-          link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
-          rgba = link_label.style_context.get_color Gtk::StateFlags::NORMAL
-          tag = buffer.create_tag nil, [[:foreground, rgba.to_s], [:underline, :single]]
+        elsif openable? note
+          tag = buffer.create_tag nil, [[:foreground, link_color],
+                                        [:underline, :single]]
           buffer.insert iter, note.description, tags: [tag]
           @link_notes[tag.object_id] = note
 
@@ -170,15 +177,27 @@ module Plugin::Gtk3
         iter
       end
 
+      # set background color of TextView
+      # see https://stackoverflow.com/a/56415144/2707413
+      rgba = style_context.get_property('background-color', :normal).value
+      @text_view.ssc :draw do |_, cr|
+        cr.save do
+          # cr.set_operator Cairo::Operator::CLEAR
+          cr.source_rgba = rgba
+          cr.paint
+        end
+        false
+      end
+
       @text_view.ssc :button_press_event do
         activate
         false
       end
 
       @text_view.ssc :populate_popup do |_, menu|
+        menu.children.each { |w| menu.remove w } # remove all
         i_timeline = get_ancestor(Timeline).imaginary
         event, items = Plugin::GUI::Command.get_menu_items i_timeline
-        menu.append Gtk::SeparatorMenuItem.new unless items.empty?
         Gtk::ContextMenu.new(*items).build!(i_timeline, event, menu).show_all
       end
 
@@ -206,11 +225,18 @@ module Plugin::Gtk3
           hovering_over_link = false
           window = @text_view.get_window :text
           window.cursor = default_cursor
+          @text_view.tooltip_text = ''
           next false
         end
         hovering = !iter.tags.empty?
         window = @text_view.get_window :text
         window.cursor = hovering ? pointer_cursor : text_cursor
+        if iter.tags.empty?
+          @text_view.tooltip_text = ''
+        else
+          note = @link_notes[iter.tags.first.object_id]
+          @text_view.tooltip_text = note.title if note
+        end
         hovering_over_link = hovering
         false
       end
@@ -257,6 +283,14 @@ module Plugin::Gtk3
         "#{prefix}@#{domain.gsub(NUMERONYM_MATCHER, &NUMERONYM_CONVERTER)}"
       else
         user.idname
+      end
+    end
+
+    def openable?(model)
+      intent = Plugin.collect(:intent_select_by_model_slug, model.class.slug).first
+      return true if intent
+      Plugin.collect(:model_of_uri, model.uri).any? do |model_slug|
+        Plugin.collect(:intent_select_by_model_slug, model_slug).first
       end
     end
   end
