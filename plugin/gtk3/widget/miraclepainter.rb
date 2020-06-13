@@ -137,9 +137,9 @@ module Plugin::Gtk3
       @text_view.editable = false
       @text_view.wrap_mode = :char
 
-      provider = Gtk::CssProvider.new
-      provider.load_from_data 'textview, text { background: transparent; }'
-      @text_view.style_context.add_provider provider
+      # provider = Gtk::CssProvider.new
+      # provider.load_from_data 'textview, text { background: transparent; }'
+      # @text_view.style_context.add_provider provider
 
       buffer = @text_view.buffer
 
