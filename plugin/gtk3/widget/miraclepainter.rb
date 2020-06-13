@@ -115,13 +115,17 @@ module Plugin::Gtk3
 
       box = Gtk::EventBox.new
       em = Gdk::EventMask
-      box.set_events em::BUTTON_PRESS_MASK | em::BUTTON_RELEASE_MASK
-      box.ssc :button_press_event do
+      box.events |= em::BUTTON_PRESS_MASK
+      box.ssc :button_press_event do |_, ev|
         activate
-        true
-      end
-      box.ssc :button_release_event do |_, ev|
-        ev.button == Gdk::BUTTON_SECONDARY and Plugin::GUI::Command.menu_pop
+        next unless ev.button == Gdk::BUTTON_SECONDARY
+
+        i_timeline = get_ancestor(Timeline).imaginary
+        event, items = Plugin::GUI::Command.get_menu_items i_timeline
+        menu = Gtk::Menu.new
+        menu.attach_to_widget self
+        Gtk::ContextMenu.new(*items).build!(i_timeline, event, menu).show_all
+        menu.popup_at_pointer ev
         true
       end
       box << grid
@@ -133,9 +137,9 @@ module Plugin::Gtk3
       @text_view.editable = false
       @text_view.wrap_mode = :char
 
-      provider = Gtk::CssProvider.new
-      provider.load_from_data 'textview, text { background: transparent; }'
-      @text_view.style_context.add_provider provider
+      # provider = Gtk::CssProvider.new
+      # provider.load_from_data 'textview, text { background: transparent; }'
+      # @text_view.style_context.add_provider provider
 
       buffer = @text_view.buffer
 
@@ -153,7 +157,9 @@ module Plugin::Gtk3
           buffer.insert iter, pixbuf
 
         elsif note.respond_to? :reference
-          tag = buffer.create_tag nil, [[:foreground, :blue], [:underline, :single]]
+          link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
+          rgba = link_label.style_context.get_color Gtk::StateFlags::NORMAL
+          tag = buffer.create_tag nil, [[:foreground, rgba.to_s], [:underline, :single]]
           buffer.insert iter, note.description, tags: [tag]
           @link_notes[tag.object_id] = note
 
@@ -166,12 +172,14 @@ module Plugin::Gtk3
 
       @text_view.ssc :button_press_event do
         activate
-        true # disable TextView's popup menu
+        false
       end
 
-      @text_view.ssc :button_release_event do |_, ev|
-        ev.button == Gdk::BUTTON_SECONDARY and Plugin::GUI::Command.menu_pop
-        true
+      @text_view.ssc :populate_popup do |_, menu|
+        i_timeline = get_ancestor(Timeline).imaginary
+        event, items = Plugin::GUI::Command.get_menu_items i_timeline
+        menu.append Gtk::SeparatorMenuItem.new unless items.empty?
+        Gtk::ContextMenu.new(*items).build!(i_timeline, event, menu).show_all
       end
 
       @text_view.ssc :event_after do |_, ev|

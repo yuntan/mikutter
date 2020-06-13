@@ -24,6 +24,7 @@ module Plugin::Gtk3
     include Enumerable
     extend Gem::Deprecate
 
+    attr_reader :imaginary
     attr_reader :postbox
     attr_reader :listbox
     attr_accessor :order
