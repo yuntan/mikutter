@@ -156,7 +156,7 @@ module Plugin::Gtk3
           end
           buffer.insert iter, pixbuf
 
-        elsif note.respond_to? :reference
+        elsif openable?(note)
           link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
           rgba = link_label.style_context.get_color Gtk::StateFlags::NORMAL
           tag = buffer.create_tag nil, [[:foreground, rgba.to_s], [:underline, :single]]
@@ -257,6 +257,14 @@ module Plugin::Gtk3
         "#{prefix}@#{domain.gsub(NUMERONYM_MATCHER, &NUMERONYM_CONVERTER)}"
       else
         user.idname
+      end
+    end
+
+    def openable?(model)
+      intent = Plugin.collect(:intent_select_by_model_slug, model.class.slug).first
+      return true if intent
+      Plugin.collect(:model_of_uri, model.uri).any? do |model_slug|
+        Plugin.collect(:intent_select_by_model_slug, model_slug).first
       end
     end
   end
