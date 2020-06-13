@@ -137,13 +137,20 @@ module Plugin::Gtk3
       @text_view.editable = false
       @text_view.wrap_mode = :char
 
-      # provider = Gtk::CssProvider.new
-      # provider.load_from_data 'textview, text { background: transparent; }'
-      # @text_view.style_context.add_provider provider
+      # set background color of TextView
+      provider = Gtk::CssProvider.new
+      provider.load_from_data 'textview, text { background: transparent; }'
+      @text_view.style_context.add_provider provider
 
       buffer = @text_view.buffer
 
       @link_notes = {}
+
+      # get link color
+      # see https://stackoverflow.com/a/56415144/2707413
+      link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
+      link_color = link_label.style_context.get_color(:normal).to_s
+
       score.reduce(buffer.start_iter) do |iter, note|
         if note.respond_to? :inline_photo
           offset = iter.offset
@@ -156,10 +163,9 @@ module Plugin::Gtk3
           end
           buffer.insert iter, pixbuf
 
-        elsif openable?(note)
-          link_label = Gtk::LinkButton.new('').children.find { |w| w.is_a? Gtk::Label }
-          rgba = link_label.style_context.get_color Gtk::StateFlags::NORMAL
-          tag = buffer.create_tag nil, [[:foreground, rgba.to_s], [:underline, :single]]
+        elsif openable? note
+          tag = buffer.create_tag nil, [[:foreground, link_color],
+                                        [:underline, :single]]
           buffer.insert iter, note.description, tags: [tag]
           @link_notes[tag.object_id] = note
 
@@ -168,6 +174,18 @@ module Plugin::Gtk3
         end
 
         iter
+      end
+
+      # set background color of TextView
+      # see https://stackoverflow.com/a/56415144/2707413
+      rgba = style_context.get_property('background-color', :normal).value
+      @text_view.ssc :draw do |_, cr|
+        cr.save do
+          # cr.set_operator Cairo::Operator::CLEAR
+          cr.source_rgba = rgba
+          cr.paint
+        end
+        false
       end
 
       @text_view.ssc :button_press_event do
