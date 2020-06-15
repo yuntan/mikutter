@@ -235,7 +235,7 @@ module Plugin::Gtk3
           @text_view.tooltip_text = ''
         else
           note = @link_notes[iter.tags.first.object_id]
-          @text_view.tooltip_text = note.title if note
+          @text_view.tooltip_text = note.name if note.respond_to? :name
         end
         hovering_over_link = hovering
         false
