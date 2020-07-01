@@ -1,0 +1,83 @@
+# This is a basic workflow to help you get started with Actions
+
+name: AppImage
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ yuntan-develop ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-16.04
+
+    env:
+      REPO: ${{github.workspace}}
+      APPDIR: ${{github.workspace}}/AppDir
+      OUTDIR: ${{github.workspace}}
+      jemalloc_version: '5.2.1'
+      ruby_version: '2.6.5'
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # Runs a single command using the runners shell
+    - name: APT
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          git \
+          wget \
+          build-essential \
+          libssl-dev \
+          libreadline6-dev \
+          libgdbm3 \
+          libgdbm-dev \
+          zlib1g-dev \
+          libglib2.0-dev \
+          libatk1.0-dev \
+          libcairo2-dev \
+          libgirepository1.0-dev \
+          libgdk-pixbuf2.0-dev \
+          libpango1.0-dev \
+          libgtk2.0-dev
+
+    - name: jemalloc
+      run: |
+        wget -q https://github.com/jemalloc/jemalloc/releases/download/$jemalloc_version/jemalloc-$jemalloc_version.tar.bz2
+        tar -xf jemalloc-$jemalloc_version.tar.bz2
+        cd jemalloc-$jemalloc_version
+        ./configure --prefix=/usr
+        make -j2
+        sudo make install
+        make "DESTDIR=$APPDIR" install
+
+    - name: ruby
+      run: |
+        wget -q https://cache.ruby-lang.org/pub/ruby/2.6/ruby-$ruby_version.tar.gz
+        tar xf ruby-$ruby_version.tar.gz
+        cd ruby-$ruby_version
+        ./configure --enable-load-relative --with-jemalloc --prefix=/usr --disable-install-doc
+        make -j2
+        make "DESTDIR=$APPDIR" install
+        cp -v BSDL COPYING* GPL LEGAL README* $APPDIR/usr/lib/ruby
+
+    - name: execso
+      run: |
+        # use exec.so to run commands placed outside of the AppImage
+        # see https://github.com/darealshinji/AppImageKit-checkrt/pull/11
+        mkdir $GITHUB_WORKSPACE/AppDir/usr/optional
+        wget -q -O $APPDIR/usr/optional/exec.so https://github.com/mikutter/execso/releases/download/2019-08-20/exec-x86_64-gnu-linux.so
+
+    - name: gen_appimage
+      run: deployment/appimage/gen_appimage.sh
+
+    - uses: actions/upload-artifact@v2
+      with:
+        path: 'mikutter-*.AppImage'
