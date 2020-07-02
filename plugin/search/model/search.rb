@@ -22,7 +22,7 @@ module Plugin::Search
     end
 
     def title
-      Plugin[:search]._("「%{query}」を%{world}で検索") % {query: query, world: world.title}
+      Plugin[:search]._("%{world}で検索") % {query: query, world: world.title}
     end
 
     def uri
