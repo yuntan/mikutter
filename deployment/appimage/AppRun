@@ -19,7 +19,6 @@ export LD_PRELOAD="$APPDIR"/usr/optional/exec.so
 # export APPIMAGE_CHECKRT_DEBUG=1
 
 # env vars for Ruby Gems
-export DISABLE_BUNDLER_SETUP=1
 # set GEM_PATH not to load host's gems
 export GEM_PATH="$APPDIR"/usr/lib/ruby/gems/2.6.0
 
@@ -49,4 +48,4 @@ done
 #   export GEM_PATH="$GEM_PATH:$d/vendor/bundler/ruby/2.3.0"
 # done
 
-exec "$APPDIR"/usr/bin/ruby -x "$APPDIR"/usr/share/mikutter/mikutter.rb "$@"
+exec "$APPDIR"/usr/bin/bundle exec ruby -x "$APPDIR"/app/mikutter.rb "$@"
