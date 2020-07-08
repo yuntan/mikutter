@@ -39,7 +39,7 @@ mkdir -p $APPDIR/usr/lib/girepository-1.0
 cp -av /usr/lib/girepository-1.0/* /usr/lib/x86_64-linux-gnu/girepository-1.0/* $APPDIR/usr/lib/girepository-1.0
 
 echo "--> copy Pixbuf loaders"
-cp -av /usr/lib/gdk-pixbuf-2.0 $APPDIR/usr/lib/
+cp -av /usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0 $APPDIR/usr/lib/
 
 echo "--> remove unused files"
 rm -vrf $APPDIR/usr/share $APPDIR/usr/include $APPDIR/usr/lib/{pkgconfig,debug}
