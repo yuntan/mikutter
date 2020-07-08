@@ -53,4 +53,4 @@ done
 
 export BUNDLE_GEMFILE="$APPDIR"/app/Gemfile
 export BUNDLE_PATH="$APPDIR"/app/vendor/bundle
-exec "$APPDIR"/usr/bin/ruby "$APPDIR"/usr/bin/bundle exec ruby -x "$APPDIR"/app/mikutter.rb "$@"
+exec "$APPDIR"/usr/bin/ruby "$APPDIR"/usr/bin/bundle exec "$APPDIR"/usr/bin/ruby -x "$APPDIR"/app/mikutter.rb "$@"
