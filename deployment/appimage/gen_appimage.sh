@@ -43,6 +43,9 @@ echo "--> copy Typelibs for gobject-introspection gem"
 mkdir $APPDIR/usr/lib/girepository-1.0 || true
 cp -av /usr/lib/girepository-1.0/* /usr/lib/x86_64-linux-gnu/girepository-1.0/* $APPDIR/usr/lib/girepository-1.0
 
+echo "--> copy Pixbuf loaders"
+cp -av /usr/lib/gdk-pixbuf-2.0 $APPDIR/usr/lib/
+
 # echo "--> patch away absolute paths"
 # for gobject-introspection gem
 # find usr/lib -name libgirepository-1.0.so.1 -exec sed -i -e 's|/usr/lib/girepository-1.0|.////lib/girepository-1.0|g' {} \;
