@@ -48,4 +48,6 @@ done
 #   export GEM_PATH="$GEM_PATH:$d/vendor/bundler/ruby/2.3.0"
 # done
 
-exec "$APPDIR"/usr/bin/bundle exec ruby -x "$APPDIR"/app/mikutter.rb "$@"
+export BUNDLE_GEMFILE="$APPDIR"/app/Gemfile
+export BUNDLE_PATH="$APPDIR"/app/vendor/bundle
+exec "$APPDIR"/usr/bin/ruby "$APPDIR"/usr/bin/bundle exec ruby -x "$APPDIR"/app/mikutter.rb "$@"
