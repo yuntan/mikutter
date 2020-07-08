@@ -8,43 +8,43 @@ shopt -s globstar
 # For more information, see http://appimage.org/
 ########################################################################
 
-REPO=/mikutter-src
+REPO=$GITHUB_WORKSPACE
 
 echo "--> get mikutter source"
 git --git-dir=$REPO/.git/ archive --format=tar --prefix=mikutter/ HEAD | tar xf -
 
 BUILD_DIR="$PWD"/mikutter
-APPDIR="$PWD"/AppDir
 set +u
+[[ -z "$APPDIR" ]] && APPDIR="$PWD"/AppDir
 [[ -z "$ARCH" ]] && export ARCH="$(arch)"
 set -u
 APP=mikutter
-VERSION=$(git -C "$REPO" describe --tags --abbrev=0)
+VERSION=$(git -C "$REPO" describe --tags --abbrev=0 || date +%Y-%m-%d-$(git rev-parse --short HEAD))
 
 echo "--> install gems"
 pushd "$BUILD_DIR"
-# for Travis CI, disable RVM
-gems=$APPDIR/usr/lib/ruby/gems/2.6.0
+export GEM_PATH=$APPDIR/usr/lib/ruby/gems/2.6.0
 # do not install test group
-# NOTE option `--without=test` is persistent by .bundle/config
-GEM_HOME=$gems GEM_PATH=$gems $APPDIR/usr/bin/ruby $APPDIR/usr/bin/bundle install --without=test --jobs=8
+$APPDIR/usr/bin/bundle install --path=vendor/bundle --without=test --jobs=2
+$APPDIR/usr/bin/bundle install # actually build gems
+
 popd
 
-echo "--> remove unused files"
-rm -vrf $APPDIR/usr/share $APPDIR/usr/include $APPDIR/usr/lib/{pkgconfig,debug}
-rm -v $APPDIR/**/*.{a,o}
-rm -vrf $gems/cache
-
 echo "--> copy mikutter"
-mkdir -p $APPDIR/usr/share/mikutter
-cp -av "$BUILD_DIR"/{.bundle,core,plugin,mikutter.rb,Gemfile,LICENSE,README} $APPDIR/usr/share/mikutter
+mkdir -p $APPDIR/app
+cp -av "$BUILD_DIR"/{.bundle,core,plugin,vendor,mikutter.rb,Gemfile{,.lock},LICENSE,README} $APPDIR/app
 
 echo "--> copy Typelibs for gobject-introspection gem"
-mkdir $APPDIR/usr/lib/girepository-1.0 || true
+mkdir -p $APPDIR/usr/lib/girepository-1.0
 cp -av /usr/lib/girepository-1.0/* /usr/lib/x86_64-linux-gnu/girepository-1.0/* $APPDIR/usr/lib/girepository-1.0
 
 echo "--> copy Pixbuf loaders"
 cp -av /usr/lib/gdk-pixbuf-2.0 $APPDIR/usr/lib/
+
+echo "--> remove unused files"
+rm -vrf $APPDIR/usr/share $APPDIR/usr/include $APPDIR/usr/lib/{pkgconfig,debug}
+rm -vrf $APPDIR/usr/lib/ruby/gems/2.6.0/cache $APPDIR/app/vendor/bundle/ruby/2.6.0/cache
+rm -v $APPDIR/**/*.{a,o}
 
 # echo "--> patch away absolute paths"
 # for gobject-introspection gem
@@ -66,13 +66,14 @@ cp -av /usr/lib/gdk-pixbuf-2.0 $APPDIR/usr/lib/
 
 # prepare files for linuxdeploy
 cp "$BUILD_DIR"/core/skin/data/icon.png mikutter.png
+cp "$BUILD_DIR"/deployment/appimage/{AppRun,mikutter.desktop} .
 chmod +x AppRun
 
 echo "--> get linuxdeploy"
 wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 chmod +x linuxdeploy-x86_64.AppImage
 
-export OUTPUT=$APP-$VERSION-$ARCH.AppImage
+export OUTPUT=$OUTDIR/$APP-$VERSION-$ARCH.AppImage
 
 ./linuxdeploy-x86_64.AppImage --appimage-extract
 
@@ -84,6 +85,5 @@ export OUTPUT=$APP-$VERSION-$ARCH.AppImage
   --output appimage
 
 echo "--> generated $OUTPUT"
-mv $OUTPUT $VOLUME
 
 echo '==> finished'
