@@ -35,7 +35,7 @@ mkdir -p $APPDIR/app
 cp -av "$BUILD_DIR"/{.bundle,core,plugin,vendor,mikutter.rb,Gemfile{,.lock},LICENSE,README} $APPDIR/app
 
 echo "--> copy libs"
-cp -av /usr/lib/x86_64-linux-gnu/{libffi.so*,libgirepository-1.0.so*,libglib-2.0.so*,libgobject-2.0.so*,libgio-2.0.so*,libgdk-x11-2.0.so*,libgdk_pixbuf-2.0.so*,libgdk_pixbuf_xlib-2.0.so*,libgtk-x11-2.0.so*} $APPDIR/usr/lib/
+cp -av /usr/lib/x86_64-linux-gnu/{libffi.so*,libgirepository-1.0.so*,libgobject-2.0.so*,libgio-2.0.so*,libgdk-x11-2.0.so*,libgdk_pixbuf-2.0.so*,libgdk_pixbuf_xlib-2.0.so*,libgtk-x11-2.0.so*} $APPDIR/usr/lib/
 cp -av /usr/lib/x86_64-linux-gnu/gtk-2.0 $APPDIR/usr/lib/
 
 echo "--> copy Typelibs for gobject-introspection gem"
