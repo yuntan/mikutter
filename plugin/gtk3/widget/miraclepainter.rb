@@ -34,6 +34,10 @@ module Plugin::Gtk3
       @model = model
       @as_subparts = as_subparts
 
+      provider = Gtk::CssProvider.new
+      provider.load_from_data 'row:selected { background: transparent; }'
+      style_context.add_provider provider
+
       build
     end
 
